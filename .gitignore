@@ -1,0 +1,69 @@
+# Node.js 项目
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 生产构建输出
+dist/
+build/
+.next/
+out/
+
+# 临时文件
+*.tmp
+*.swp
+*.log
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+.envrc
+
+# 日志文件
+logs/
+*.log
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
+# IDE 配置文件
+.vscode/
+.idea/
+
+# 静态资源缓存
+.cache/
+public/static
+
+# Jest 测试覆盖率目录
+coverage/
+
+# Next.js 特有文件
+.next/
+out/
+
+# Tailwind CSS 特有文件
+tailwind.config.js
+
+# 类型检查结果
+*.tsbuildinfo
+
+# Prisma
+prisma/*.db
+prisma/migrations/
+
+# Docker
+docker-compose.override.yml
+
+# 本地开发工具
+.local
+
+# 其他忽略规则
+*.sublime*
+*.vscode*
+
+# 匹配所有的 `test` 或 `tests` 文件夹
+test/
+tests/
