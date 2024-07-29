@@ -106,3 +106,88 @@ export async function* fetchMessageStream(messages: Message[]): AsyncIterable<st
         throw new Error('Failed to fetch message from LLM.');
     }
 }
+
+// // fetch msg from dify (streaming)
+// export async function* fetchMessageStreamDify(messages: Message[]): AsyncIterable<string> {
+//     try {
+//         const response = await fetch('/api/dify', {
+//           method: 'POST',
+//           headers: {
+//             'Content-Type': 'application/json',
+//           },
+//           body: JSON.stringify({
+//             query: messages[messages.length - 1].content,
+//             response_mode: 'streaming',
+//             conversation_id: '',
+//             user: 'abc-123',
+//             inputs: {},
+//           }),
+//         });
+  
+//         if (!response.ok) {
+//           throw new Error('Network response was not ok');
+//         }
+  
+//         const reader = response.body?.getReader();
+//         const decoder = new TextDecoder('utf-8');
+//         let result = '';
+  
+//         while (true) {
+//           const { done, value } = await reader.read();
+//           if (done) break;
+//           result += decoder.decode(value, { stream: true });
+//           return result;
+//         }  
+//       } catch (error) {
+//         console.error('Error fetching data:', error);
+//       }
+// }
+
+// fetch msg from dify (streaming)
+export async function* fetchMessageStreamDify(messages: Message[]): AsyncIterable<string> {
+    try {
+        const response = await fetch('/api/dify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: messages[messages.length - 1].content,
+                response_mode: 'streaming',
+                conversation_id: '',
+                user: 'abc-123',
+                inputs: {},
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const parts = buffer.split('data: ');
+            for (let i = 0; i < parts.length - 1; i++) {
+                const chunk = parts[i].trim();
+                if (chunk) {
+                    console.log('chunk:', chunk);
+                    const chunkOBJ = JSON.parse(chunk);
+                    if (chunkOBJ['answer']) {
+                        yield chunkOBJ['answer'];
+                    }   
+                }
+            }
+            buffer = parts[parts.length - 1];
+        }
+    } catch (error) {
+        console.error('Error in fetchMessageStreamDify:', error);
+    }
+}

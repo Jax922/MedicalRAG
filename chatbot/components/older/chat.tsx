@@ -1,7 +1,7 @@
 'use client';
 import OlderPromptForm from "@/components/older/prompt-form";
 import OldMessage from "@/components/older/message";
-import { saveMessage, fetchMessage, fetchMessageStream } from "@/lib/actions";
+import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify } from "@/lib/actions";
 import SpeechToText from "@/components/older/speech";
 import * as Types from "@/lib/types";
 import * as React from "react";
@@ -35,7 +35,10 @@ export default function Chat() {
 		saveMessage(message);
 		const newMsgData = [...msgData, message];
 		setMsgData(newMsgData);
-		fetchAction(newMsgData);
+		// fetchAction(newMsgData);
+		// fetchActionStream(newMsgData);
+		fetchActionDify(newMsgData);
+		// fetchActionStreamDify(newMsgData);
 		
 	}
 
@@ -81,6 +84,67 @@ export default function Chat() {
 		}
 	}
 
+	async function fetchActionDify(msgData: Types.Message[]) {
+		setLoading(true);
+	
+		const botMessage: Types.Message = {
+			id: String(Date.now()),
+			type: 'bot',
+			content: ''
+		};
+	
+		// setMsgData(prev => [...prev, botMessage]);
+	
+		try {
+			const message = await fetchMessage(msgData);
+	
+			setMsgData(prev => {
+				const updatedMessages = [...prev];
+				updatedMessages.push(message);
+				return updatedMessages;
+			});
+		} catch (error) {
+			console.error("Error fetching message:", error);
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	async function fetchActionStreamDify(msgData: Types.Message[]) {
+		setLoading(true);
+	
+		const botMessage: Types.Message = {
+			id: String(Date.now()),
+			type: 'bot',
+			content: ''
+		};
+	
+		setMsgData(prev => [...prev, botMessage]);
+	
+		try {
+			for await (const chunk of fetchMessageStreamDify(msgData)) {
+				console.log("Received chunk:", chunk);
+	
+				setMsgData(prev => {
+					const updatedMessages = [...prev];
+					const currentContent = updatedMessages[updatedMessages.length - 1].content;
+	
+					// 删除重复的chunk，这里不知道是否放到后端api更好？
+					if (!currentContent.endsWith(chunk)) {
+						updatedMessages[updatedMessages.length - 1].content += chunk;
+					}
+					
+					return updatedMessages;
+				});
+			}
+		} catch (error) {
+			console.error("Error fetching message:", error);
+		} finally {
+			setLoading(false);
+		}
+	}	
+	
+
 
 
   return (
@@ -90,6 +154,11 @@ export default function Chat() {
 					<OldMessage key={message.id} message={message} />
 				))}
 			</div>
+			{	loading &&
+				<div className="loading-spinner">
+            		<div className="spinner"></div>
+        		</div>
+			}
 			<div className="w-full p-4 sticky bottom-0 bg-white">
 				<SpeechToText setSpeechText={onSpeechChange}/>
 				<OlderPromptForm saveAction={saveAction} text={speechText}/>
