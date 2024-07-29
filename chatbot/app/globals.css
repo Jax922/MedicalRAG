@@ -67,3 +67,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* for older adults */
+:root {
+  --lightYellow: #FFFACD;
+  --darkGray: #333333;
+}

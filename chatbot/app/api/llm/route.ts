@@ -8,7 +8,7 @@ import SYSTEM_PROMPT from "@/lib/prompting";
 import { Message } from '@/lib/types';
 
 
-const openai = new OpenAI({ 
+const openai = new OpenAI({
     apiKey: "sk-D4YRkSe0WYNVycYhuLRsxVK8MjA9Uu6K49bwQQyAqjaejwUN",
     baseURL: "https://api.chatanywhere.tech/v1"
 });
