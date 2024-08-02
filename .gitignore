@@ -14,6 +14,7 @@ out/
 *.tmp
 *.swp
 *.log
+__pycache__
 
 # 环境变量文件
 # .env

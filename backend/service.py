@@ -13,7 +13,8 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai_like import OpenAILike
-from utils import gpt4o_call
+from utils import gpt4o_call, gpt4o_history_call, gpt4o_history_call_stream
+from llama_index.core.llms import ChatMessage, MessageRole
 
 _ = load_dotenv(find_dotenv("../env/.env"))
 
@@ -127,10 +128,181 @@ def chatPipeline(user_query: str):
     return response.response, ref
 
 
+def rag_final_use(user_query, history):
+    # 根据用户的查询以及回复(基本的寒暄是不需要的)，判断是否需要RAG
+    global chat_engine
+    execution_start_time = time.time()
+    for message in history:
+        chat_engine.chat_history.append(ChatMessage(
+            role=message['role'], content=message['content']))
+    response = chat_engine.chat(user_query)
+    ref = []
+    for reference in response.source_nodes:
+        ref.append([reference.text, reference.metadata['file_name']])
+        print("reference", reference.metadata['file_name'])
+        print("reference", reference.text)
+    execute_end_time = time.time()
+    execution_time = execute_end_time - execution_start_time
+    print("Execution Time:", execution_time)
+
+    return response.response, ref
+
+    # custom_chat_history = [
+    #     ChatMessage(
+    #         role=MessageRole.USER,
+    #         content="Hello assistant, we are having a insightful discussion about Paul Graham today.",
+    #     ),
+    #     ChatMessage(role=MessageRole.ASSISTANT, content="Okay, sounds good."),
+    # ]
+    # chat_engine = chat_engine.from_defaults(
+    #     chat_history=custom_chat_history,
+    # )
+
+
 def reset_chat_engine():
     global chat_engine
     chat_engine.reset()
     return {"message": "Chat engine has been reset"}
+
+
+def get_chat_history():
+    global chat_engine
+    chat_history = chat_engine.chat_history
+    print("chat_history", chat_history)
+    return chat_history
+
+
+def single_agent(user_query: str, history: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Handles the single-agent conversation."""
+    health_advisor_system = f'''
+    # 角色描述
+    你是一位专业且富有同情心的医疗专家。你的目标是模拟真实医生的问诊，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
+    你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
+
+    ## 任务
+    - **探究患者的感受**：询问患者的具体症状和感受，让患者感到被理解。
+    - **提出澄清问题**：如果患者的陈述模糊或缺乏细节，请询问具体信息。
+    - **彻底调查症状**：询问症状的持续时间、强度和性质。
+    - **检查相关症状**：询问任何可能相关的症状。
+    - **回顾病史**：确保了解任何先前的诊断或治疗。
+    - **提供清晰指导**：基于提供的信息，给出明确且可操作的建议。
+    - **确保理解**：确认患者理解你的建议和指示。
+
+    ## 输出要求
+    1. 每次只问一个问题，逐步思考，确保一次性提的问题不超过两个，并分点罗列。
+    2. 确保你的回答直接回应患者的问题，不要输出基本的寒暄。
+    3. 在每轮对话中表现出同情心和专业性，告诉患者他的感觉是正常的，并做出回应，让他知道医生在倾听，提供实际的支持。
+    4. 如果不确信已经足够了解病情，患者回答问题后请直接问下一个问题，以更好地了解病情。
+    5. 如果患者表现出害怕、畏惧、恐慌等情绪，请先用一句话安抚患者的情绪，然后再提出一个问题，以更好地了解患者的情绪。
+    6. 如果认为患者连续几次回答都没有很好地描述病情，请提供选择题，以帮助患者更明确地表达症状。
+    7. 当确信已经足够了解病情后，给出人性化的建议。基于患者提供的信息，提供明确且可操作的指导。
+
+    ## 示例对话：
+    ```json
+    {{
+    "用户输入": "我最近头疼得很厉害。",
+    "模型回复": "我非常理解您的感受。我们来仔细看看这个问题。\\n您的头疼已经持续多长时间了？",
+    "用户回答": "大概有一周了。",
+    "模型回复": "谢谢您的信息。让我们进一步了解一下。\\n您的头疼是轻微、中等还是严重呢？",
+    "用户回答": "中等偏重。",
+    "模型回复": "我能理解您的感受。这个过程对您来说真的很不容易。让我们再详细了解下\\n这种头疼的性质是什么？是钝痛、刺痛还是压迫感？",
+    "用户回答": "刺痛。",
+    "模型回复": "谢谢您的描述。我们再看看其他可能的症状。\\n有没有伴随其他症状，比如恶心、呕吐或者视力模糊？",
+    "用户回答": "有时会感到恶心。",
+    "模型回复": "明白了。这些信息非常有帮助。请不要担心，我会尽力帮助您。\\n您最近是否有过任何压力、睡眠不足或身体不适的情况？"
+    }}
+    '''
+    # insert system prompt into history
+    if len(history) == 0:
+        history.append({'role': 'system', 'content': health_advisor_system})
+    # Record user query in history
+    history.append({'role': 'user', 'content': user_query})
+    # Call GPT-4
+    response = gpt4o_history_call("gpt-4o-mini", history)
+    history.append({'role': 'assistant', 'content': response})
+    return {'final_response': response, 'history': history}
+
+
+def multi_agent(user_query: str, health_history: List[Dict[str, Any]], therapy_history: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Handles the multi-agent conversation for the first scenario."""
+    health_advisor_system = f'''
+# 角色描述
+你是一位专业且富有同情心的医疗专家。你的目标是模拟真实医生的问诊，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
+你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解问题。
+
+## 任务
+- **探究患者的感受**：询问患者的具体症状和感受，让患者感到被理解。
+- **提出澄清问题**：如果患者的陈述模糊或缺乏细节，请询问具体信息。
+- **彻底调查症状**：询问症状的持续时间、强度和性质。
+- **检查相关症状**：询问任何可能相关的症状。
+- **回顾病史**：确保了解任何先前的诊断或治疗。
+- **提供清晰指导**：基于提供的信息，给出明确且可操作的建议。
+- **确保理解**：确认患者理解你的建议和指示。
+
+## 输出要求
+1. 每次只问一个问题，逐步思考，确保一次性提的问题不超过两个，并分点罗列。
+2. 确保你的回答直接回应患者的问题，不要输出基本的寒暄。
+3. 在每轮对话中表现出同情心和专业性，告诉患者他的感觉是正常的，并做出回应，让他知道医生在倾听，提供实际的支持。
+4. 如果不确信已经足够了解病情，患者回答问题后请直接问下一个问题，以更好地了解病情。
+5. 如果患者表现出害怕、畏惧、恐慌等情绪，请先用一句话安抚患者的情绪，然后再提出一个问题，以更好地了解患者的情绪。
+6. 如果认为患者连续几次回答都没有很好地描述病情，请提供选择题，以帮助患者更明确地表达症状。
+7. 当确信已经足够了解病情后，给出人性化的建议。基于患者提供的信息，提供明确且可操作的指导。
+
+## 示例对话：
+```json
+{{
+  "用户输入": "我最近头疼得很厉害。",
+  "模型回复": "我非常理解您的感受。我们来仔细看看这个问题。\\n您的头疼已经持续多长时间了？",
+  "用户回答": "大概有一周了。",
+  "模型回复": "谢谢您的信息。让我们进一步了解一下。\\n您的头疼是轻微、中等还是严重呢？",
+  "用户回答": "中等偏重。",
+  "模型回复": "我能理解您的感受。这个过程对您来说真的很不容易。让我们再详细了解下\\n这种头疼的性质是什么？是钝痛、刺痛还是压迫感？",
+  "用户回答": "刺痛。",
+  "模型回复": "谢谢您的描述。我们再看看其他可能的症状。\\n有没有伴随其他症状，比如恶心、呕吐或者视力模糊？",
+  "用户回答": "有时会感到恶心。",
+  "模型回复": "明白了。这些信息非常有帮助。请不要担心，我会尽力帮助您。\\n您最近是否有过任何压力、睡眠不足或身体不适的情况？"
+}}
+'''
+
+    # therapy_system = f'''你是一位心理健康咨询师。你的任务是提供情绪管理和共情支持。请根据健康助手的回复，添加共情和情绪支持的内容，帮助患者缓解焦虑和期待情绪，使最终回复更具关怀和支持性。'''
+    therapy_system = f'''
+    # 角色：
+    - 你是一位心理健康咨询师，你的目标受众是老年人，你的任务是基于健康助手的回复为患者提供情绪管理和共情支持。
+    # 任务：
+    1. 根据健康助手的回复，用合适并且自然的语气解释给老年人，要让老年人能够理解你的关心和支持。
+    2. 不要过多润色，保持简洁明了。
+    3. 流程：第一步是探究患者的感受，第二步是回应，告诉患者他的感觉是正常的，让他安心，对患者的话语做出反应，让他知道医生在倾听：
+    # 输出要求：
+    1. 改写的内容尽量要少，不要过多润色，保持简洁明了。
+    2. 语气要自然
+    3. 对于不用改写的情况，直接输出健康助手的回复！！！
+    '''
+    if len(health_history) == 0:
+        health_history.append(
+            {'role': 'system', 'content': health_advisor_system})
+    if len(therapy_history) == 0:
+        therapy_history.append({'role': 'system', 'content': therapy_system})
+    # gpt-4o-mini
+    # Record user query in health advisor history
+    health_history.append({'role': 'user', 'content': user_query})
+    health_advice = gpt4o_history_call("gpt-4o-mini", health_history)
+    health_history.append({'role': 'assistant', 'content': health_advice})
+
+    therapy_template = f'''
+    请基于下面健康助手的回复，为患者提供情绪支持和共情。你的回复应当帮助患者缓解焦虑的情绪，使患者感受到关怀和支持。
+    只需稍微修改健康助手的内容，增加一点点共情和支持的语气。
+    健康助手回复：{health_advice}
+'''
+
+    therapy_history.append({'role': 'user', 'content': therapy_template})
+    therapy_advice = gpt4o_history_call("gpt-4o-mini", therapy_history)
+    therapy_history.append({'role': 'assistant', 'content': therapy_advice})
+
+    return {
+        'final_response': therapy_advice,
+        'health_history': health_history,
+        'therapy_history': therapy_history
+    }
 
 
 def emotion_detection(text):
@@ -206,3 +378,8 @@ def keywords_highlight(user_query, bald_text):
     '''
     highlight_text = gpt4o_call("gpt-4o", prompt_template, system_prompt)
     return highlight_text
+
+
+if __name__ == "__main__":
+    print("Hello, World!")
+    get_chat_history()

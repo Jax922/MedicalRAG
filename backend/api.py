@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from service import (chatPipeline, check_rag_usage, emotion_detection,
-                     keywords_highlight, ragPipeline, reset_chat_engine)
+                     keywords_highlight, ragPipeline, reset_chat_engine, get_chat_history)
 
 app = FastAPI()
 
@@ -75,6 +75,11 @@ def check_rag_endpoint(history: HistoryModel):
 def keywords_highlight_endpoint(highlight: HighlightModel):
     result = keywords_highlight(highlight.user_query, highlight.bald_text)
     return {"keywords": result}
+
+
+@app.get("/get_chat_history")
+def get_chat_history_endpoint():
+    return {"chat_history": get_chat_history()}
 
 
 if __name__ == "__main__":
