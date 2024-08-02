@@ -1,4 +1,4 @@
 # Install
 
 ```shell
-pip install fastapi uvicorn
+pip install fastapi uvicorn typing 
