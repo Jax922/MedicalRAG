@@ -1,4 +1,5 @@
 import json
+import re
 import os
 import time
 from typing import Any, Dict, List
@@ -7,12 +8,13 @@ from llama_index.core import (Settings, SimpleDirectoryReader,
                               StorageContext, VectorStoreIndex,
                               get_response_synthesizer,
                               load_index_from_storage)
-from llama_index.core.chat_engine import CondenseQuestionChatEngine
+from llama_index.core.chat_engine import CondenseQuestionChatEngine, ContextChatEngine
 from llama_index.core.postprocessor import LLMRerank
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai_like import OpenAILike
+from llama_index.llms.openai import OpenAI
 from utils import gpt4o_call, gpt4o_history_call, gpt4o_history_call_stream
 from llama_index.core.llms import ChatMessage, MessageRole
 
@@ -24,8 +26,14 @@ def initialize_settings(api_base, api_key, model, embed_model):
         api_base=api_base,
         api_key=api_key,
         model=model,
-        is_chat_model=True
+        is_chat_model=True,
+        is_function_calling_model=True,
     )
+    # Settings.llm = OpenAI(
+    #     api_base=api_base,
+    #     api_key=api_key,
+    #     model=model,
+    # )
     Settings.embed_model = OpenAIEmbedding(
         api_base=api_base,
         api_key=api_key,
@@ -89,21 +97,117 @@ query_engine = RetrieverQueryEngine(
     ],
 )
 
-chat_engine = CondenseQuestionChatEngine.from_defaults(
+react_chat_engine = index.as_chat_engine(chat_mode="react", verbose=True)
+
+context_chat_engine = index.as_chat_engine(chat_mode="context", verbose=True)
+
+condense_question_chat_engine = CondenseQuestionChatEngine.from_defaults(
     query_engine=query_engine,
     verbose=True,
 )
 
+chat_engine = index.as_chat_engine(chat_mode="best", verbose=True)
 
-def ragPipeline(user_query: str):
+chat_engine_dict = {
+    "default": chat_engine,
+    "react": react_chat_engine,
+    "context": context_chat_engine,
+    "condense_question": condense_question_chat_engine
+}
+
+
+def chat_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
+    global chat_engine
+    if len(history) > 0:
+        for message in history:
+            chat_engine.chat_history.append(ChatMessage(
+                role=message['role'], content=message['content']))
+    execution_start_time = time.time()
+    response = chat_engine.chat(user_query)
+    ref = []
+    for reference in response.source_nodes:
+        ref.append([reference.text, reference.metadata['file_name']])
+        # print("reference", reference.metadata['file_name'])
+        # print("reference", reference.text)
+    execute_end_time = time.time()
+    execution_time = execute_end_time - execution_start_time
+    print("Execution Time:", execution_time)
+
+    return response.response, ref
+
+
+def condense_question_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
+    global condense_question_chat_engine
+    if len(history) > 0:
+        for message in history:
+            condense_question_chat_engine.chat_history.append(ChatMessage(
+                role=message['role'], content=message['content']))
+    execution_start_time = time.time()
+    response = condense_question_chat_engine.chat(user_query)
+    ref = []
+    for reference in response.source_nodes:
+        ref.append([reference.text, reference.metadata['file_name']])
+        # print("reference", reference.metadata['file_name'])
+        # print("reference", reference.text)
+
+    execute_end_time = time.time()
+    execution_time = execute_end_time - execution_start_time
+    print("Execution Time:", execution_time)
+
+    return response.response, ref
+
+
+def context_chat_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
+    global context_chat_engine
+    execution_start_time = time.time()
+    if len(history) > 0:
+        for message in history:
+            context_chat_engine.chat_history.append(ChatMessage(
+                role=message['role'], content=message['content']))
+    response = context_chat_engine.chat(user_query)
+    ref = []
+    for reference in response.source_nodes:
+        ref.append([reference.text, reference.metadata['file_name']])
+        # print("reference", reference.metadata['file_name'])
+        # print("reference", reference.text)
+
+    execute_end_time = time.time()
+    execution_time = execute_end_time - execution_start_time
+    print("Execution Time:", execution_time)
+
+    return response.response, ref
+
+
+def react_chat_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
+    global react_chat_engine
+    if len(history) > 0:
+        for message in history:
+            react_chat_engine.chat_history.append(ChatMessage(
+                role=message['role'], content=message['content']))
+    execution_start_time = time.time()
+    response = react_chat_engine.chat(user_query)
+    ref = []
+    for reference in response.source_nodes:
+        ref.append([reference.text, reference.metadata['file_name']])
+        # print("reference", reference.metadata['file_name'])
+        # print("reference", reference.text)
+
+    execute_end_time = time.time()
+    execution_time = execute_end_time - execution_start_time
+    print("Execution Time:", execution_time)
+
+    return response.response, ref
+
+
+def query_pipeline(user_query: str):
     execution_start_time = time.time()
     response = query_engine.query(user_query)
 
     ref = []
     for reference in response.source_nodes:
         ref.append([reference.text, reference.metadata['file_name']])
-        print("reference", reference.metadata['file_name'])
-        print("reference", reference.text)
+        # print("reference", reference.metadata['file_name'])
+        # print("reference", reference.text)
 
     execute_end_time = time.time()
     execution_time = execute_end_time - execution_start_time
@@ -112,23 +216,7 @@ def ragPipeline(user_query: str):
     return response.response, ref
 
 
-def chatPipeline(user_query: str):
-    global chat_engine
-    execution_start_time = time.time()
-    response = chat_engine.chat(user_query)
-    ref = []
-    for reference in response.source_nodes:
-        ref.append([reference.text, reference.metadata['file_name']])
-        print("reference", reference.metadata['file_name'])
-        print("reference", reference.text)
-    execute_end_time = time.time()
-    execution_time = execute_end_time - execution_start_time
-    print("Execution Time:", execution_time)
-
-    return response.response, ref
-
-
-def rag_final_use(user_query, history):
+def rag_chat_final_use(user_query, history):
     # 根据用户的查询以及回复(基本的寒暄是不需要的)，判断是否需要RAG
     global chat_engine
     execution_start_time = time.time()
@@ -139,8 +227,8 @@ def rag_final_use(user_query, history):
     ref = []
     for reference in response.source_nodes:
         ref.append([reference.text, reference.metadata['file_name']])
-        print("reference", reference.metadata['file_name'])
-        print("reference", reference.text)
+        # print("reference", reference.metadata['file_name'])
+        # print("reference", reference.text)
     execute_end_time = time.time()
     execution_time = execute_end_time - execution_start_time
     print("Execution Time:", execution_time)
@@ -372,14 +460,121 @@ def keywords_highlight(user_query, bald_text):
     请从以下文本中提取与用户查询最相关且优先级最高的关键词。确保关键词直接与用户查询相关，并且对理解主要内容至关重要。
     用户查询: {user_query}
     文本内容: {bald_text}
-    输出要求: 提供一个包含所有相关关键词的列表，按重要性排序。不需要包含任何额外信息或评论。
+    输出要求: 提供一个包含所有相关关键词的 JSON 格式的列表，按重要性排序。不需要包含任何额外信息或评论。
+
+    示例输出:
+    {{
+        "keywords": ["高血压", "治疗", "生活方式改变", "药物治疗"]
+    }}
     '''
     system_prompt = '''你是一个提取关键词的专家，你可以从给定的文本中提取与用户查询相关的关键词及重要信息。确保关键词高度相关，并根据其与查询的相关性进行优先级排序。
     '''
-    highlight_text = gpt4o_call("gpt-4o", prompt_template, system_prompt)
-    return highlight_text
+    highlight_text = gpt4o_call(
+        "gpt-4o", prompt_template, system_prompt, json=True)
+
+    # 解析返回的 JSON 格式的字符串
+    try:
+        keywords_list = json.loads(highlight_text).get("keywords", [])
+    except json.JSONDecodeError:
+        # 如果返回的内容不是有效的 JSON 格式，则使用正则表达式提取关键词
+        keywords_list = re.findall(r'\d+\.\s*(.*?)(?:\n|$)', highlight_text)
+        keywords_list = [keyword.strip()
+                         for keyword in keywords_list]  # 去除多余的空格
+
+    return keywords_list
 
 
 if __name__ == "__main__":
-    print("Hello, World!")
-    get_chat_history()
+    # 测试单代理
+    print("\nTesting single_agent:")
+    user_query = "我最近头疼得很厉害。"
+    history = []
+    single_agent_response = single_agent(user_query, history)
+    # print("single_agent response:", single_agent_response)
+
+    # 测试多代理
+    print("\nTesting multi_agent:")
+    health_history = []
+    therapy_history = []
+    multi_agent_response = multi_agent(
+        user_query, health_history, therapy_history)
+    # print("multi_agent response:", multi_agent_response)
+
+    # 测试情绪检测
+    print("\nTesting emotion_detection:")
+    text = "我最近总是觉得非常紧张，晚上睡不着觉。"
+    emotion_detection_response = emotion_detection(text)
+    # print("emotion_detection response:", emotion_detection_response)
+
+    # 测试RAG使用检查
+    print("\nTesting check_rag_usage:")
+    history = [
+        {'role': 'user', 'content': "我最近头疼得很厉害。"},
+        {'role': 'assistant', 'content': "你头疼持续了多久？"}
+    ]
+    user_query = "请问LLM是什么？"
+    check_rag_usage_response = check_rag_usage(user_query, history)
+    # print("check_rag_usage response:", check_rag_usage_response)
+
+    # 测试关键词高亮
+    print("\nTesting keywords_highlight:")
+    bald_text = "高血压是一种常见的慢性病，治疗包括生活方式改变和药物治疗。"
+    keywords_highlight_response = keywords_highlight(user_query, bald_text)
+    # print("keywords_highlight response:", keywords_highlight_response)
+
+    # 测试 chatPipeline
+    print("\nTesting chatPipeline:")
+    chat_pipeline_response, chat_pipeline_ref = chat_pipeline(user_query)
+    # print("chatPipeline response:", chat_pipeline_response)
+    # print("chatPipeline references:", chat_pipeline_ref)
+
+    print("\nTesting chatPipeline round 2:")
+    round2_user_query = "LLM怎么解决幻觉问题"
+    chat_pipeline_response, chat_pipeline_ref = chat_pipeline(
+        round2_user_query)
+    # print("chatPipeline response:", chat_pipeline_response)
+    # print("chatPipeline references:", chat_pipeline_ref)
+
+    # 测试 ragPipeline
+    print("\nTesting ragPipeline:")
+    rag_pipeline_response, rag_pipeline_ref = query_pipeline(user_query)
+    # print("ragPipeline response:", rag_pipeline_response)
+    # print("ragPipeline references:", rag_pipeline_ref)
+
+    # 获取聊天历史记录
+    print("\nGetting chat history:")
+    chat_history = get_chat_history()
+    print("Chat history:", chat_history)
+
+    # 重置 chat_engine
+    print("\nResetting chat engine:")
+    reset_response = reset_chat_engine()
+    print(reset_response)
+
+    # 测试 condense_question_pipeline
+    print("\nTesting condense_question_pipeline:")
+    condense_question_response, condense_question_ref = condense_question_pipeline(
+        user_query)
+    # print("condense_question_pipeline response:", condense_question_response)
+    # print("condense_question_pipeline references:", condense_question_ref)
+
+    # 测试 context_chat_pipeline
+    print("\nTesting context_chat_pipeline:")
+    context_chat_response, context_chat_ref = context_chat_pipeline(user_query)
+    # print("context_chat_pipeline response:", context_chat_response)
+    # print("context_chat_pipeline references:", context_chat_ref)
+
+    # 测试 react_chat_pipeline
+    print("\nTesting react_chat_pipeline:")
+    react_chat_response, react_chat_ref = react_chat_pipeline(user_query)
+    # print("react_chat_pipeline response:", react_chat_response)
+    # print("react_chat_pipeline references:", react_chat_ref)
+
+    # 测试 rag_chat_final_use
+    print("\nTesting rag_chat_final_use:")
+    history = [{'role': 'user', 'content': "我最近头疼得很厉害。"},
+               {'role': 'assistant', 'content': "你头疼持续了多久？"}]
+    rag_chat_final_response, rag_chat_final_ref = rag_chat_final_use(
+        "请问LLM是什么？", history)
+    # print("rag_chat_final_use response:", rag_chat_final_response)
+    # print("rag_chat_final_use references:", rag_chat_final_ref)

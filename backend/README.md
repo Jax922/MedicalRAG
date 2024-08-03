@@ -10,3 +10,6 @@ conda create --name myenv python=3.10
 conda activate myenv(自定义环境名字)
 python api.py 
 或者vscode点击运行
+
+交互式 API 文档（基于 Swagger UI）：http://127.0.0.1:8000/docs
+API 文档（基于 ReDoc）：http://127.0.0.1:8000/redoc
