@@ -1,4 +1,5 @@
 import json
+from pprint import pprint
 import re
 import os
 import time
@@ -136,6 +137,39 @@ def chat_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
     return response.response, ref
 
 
+def chat_stream_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
+    global chat_engine
+    if len(history) > 0:
+        for message in history:
+            chat_engine.chat_history.append(ChatMessage(
+                role=message['role'], content=message['content']))
+    execution_start_time = time.time()
+    streaming_response = chat_engine.stream_chat(user_query)
+    # 打印 streaming_response 的所有属性和方法
+    # print("streaming_response attributes:", dir(streaming_response))
+    # print("streaming_response details:")
+    # pprint(streaming_response)
+
+    # for token in streaming_response.response_gen:
+    #     # yield token
+    #     print(token, end="")
+    ref = []
+    for reference in streaming_response.source_nodes:
+        ref.append([reference.text, reference.metadata['file_name']])
+        # print("reference", reference.metadata['file_name'])
+        # print("reference", reference.text)
+    non_streaming_response = {"reference": ref}
+    yield json.dumps(non_streaming_response) + "\n\n"
+
+    for token in streaming_response.response_gen:
+        # print(token, end="")
+        yield token
+    execute_end_time = time.time()
+    execution_time = execute_end_time - execution_start_time
+    print("Execution Time:", execution_time)
+
+
+
 def condense_question_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
     global condense_question_chat_engine
     if len(history) > 0:
@@ -260,7 +294,7 @@ def get_chat_history():
     return chat_history
 
 
-def single_agent(user_query: str, history: List[Dict[str, Any]]) -> Dict[str, Any]:
+def single_agent(user_query: str, history: List[Dict[str, Any]],is_stream = False) -> Dict[str, Any]:
     """Handles the single-agent conversation."""
     health_advisor_system = f'''
     # 角色描述
@@ -306,9 +340,18 @@ def single_agent(user_query: str, history: List[Dict[str, Any]]) -> Dict[str, An
     # Record user query in history
     history.append({'role': 'user', 'content': user_query})
     # Call GPT-4
-    response = gpt4o_history_call("gpt-4o-mini", history)
-    history.append({'role': 'assistant', 'content': response})
-    return {'final_response': response, 'history': history}
+    if is_stream:
+        async def response_generator():
+            async for chunk in gpt4o_history_call_stream("gpt-4o-mini", history):
+                yield chunk
+        return response_generator()
+    else:
+        execution_start_time = time.time()
+        response = gpt4o_history_call("gpt-4o-mini", history)
+        history.append({'role': 'assistant', 'content': response})
+        execute_end_time = time.time()
+        execution_time = execute_end_time - execution_start_time
+        return {'final_response': response, 'history': history, 'execution_time': execution_time}
 
 
 def multi_agent(user_query: str, health_history: List[Dict[str, Any]], therapy_history: List[Dict[str, Any]]) -> Dict[str, Any]:

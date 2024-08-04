@@ -37,10 +37,10 @@ def gpt4o_history_call_stream(model, history, json=False):
             messages=messages,
             stream=True
         )
-    # for chunk in response:
-    #     if chunk.choices[0].delta.content is not None:
-    #         print(chunk.choices[0].delta.content, end="")
-    return response
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            yield chunk.choices[0].delta.content
+    # return response
 
 
 def gpt4o_history_call(model, history, json=False):

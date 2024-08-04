@@ -1,8 +1,10 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from service import (chat_pipeline, condense_question_pipeline, context_chat_pipeline, react_chat_pipeline,
+from service import (chat_pipeline, chat_stream_pipeline,
+                     condense_question_pipeline, context_chat_pipeline, react_chat_pipeline,
                      query_pipeline, rag_chat_final_use,
                      reset_chat_engine, get_chat_history,
                      single_agent, multi_agent,
@@ -69,6 +71,12 @@ def chat_endpoint(query: QueryModel):
     }
 
 
+@app.post("/chat_stream/")
+async def chat_endpoint(query: HistoryModel):
+    response_generator = chat_stream_pipeline(query.user_query, query.history)
+    return StreamingResponse(response_generator, media_type="text/plain")
+
+
 @app.post("/rag_chat_final_use")
 def rag_chat_final_use_endpoint(query: HistoryModel):
     response = rag_chat_final_use(query.user_query, query.history)
@@ -105,8 +113,13 @@ def get_chat_history_endpoint():
 
 @app.post("/single_agent")
 def single_agent_endpoint(query: HistoryModel):
-    response = single_agent(query.user_query, query.history)
+    response = single_agent(query.user_query, query.history, stream=False)
     return {"response": response}
+
+@app.post("/single_agent_stream")
+def single_agent_stream_endpoint(query: HistoryModel):
+    response_generator = single_agent(query.user_query, query.history, stream=True)
+    return StreamingResponse(response_generator, media_type="text/plain")
 
 
 @app.post("/multi_agent")
