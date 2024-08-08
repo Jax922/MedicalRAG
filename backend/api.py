@@ -113,12 +113,12 @@ def get_chat_history_endpoint():
 
 @app.post("/single_agent")
 def single_agent_endpoint(query: HistoryModel):
-    response = single_agent(query.user_query, query.history, stream=False)
+    response = single_agent(query.user_query, query.history,False)
     return {"response": response}
 
 @app.post("/single_agent_stream")
 def single_agent_stream_endpoint(query: HistoryModel):
-    response_generator = single_agent(query.user_query, query.history, stream=True)
+    response_generator = single_agent(query.user_query, query.history, True)
     return StreamingResponse(response_generator, media_type="text/plain")
 
 
