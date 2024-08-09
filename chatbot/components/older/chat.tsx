@@ -1,7 +1,7 @@
 'use client';
 import OlderPromptForm from "@/components/older/prompt-form";
 import OldMessage from "@/components/older/message";
-import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify } from "@/lib/actions";
+import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal } from "@/lib/actions";
 import SpeechToText from "@/components/older/speech";
 import * as Types from "@/lib/types";
 import * as React from "react";
@@ -39,6 +39,8 @@ export default function Chat() {
 		// fetchActionStream(newMsgData);
 		fetchActionDify(newMsgData);
 		// fetchActionStreamDify(newMsgData);
+
+		// fetchActionLocal(newMsgData);
 		
 	}
 
@@ -97,6 +99,32 @@ export default function Chat() {
 	
 		try {
 			const message = await fetchMessage(msgData);
+	
+			setMsgData(prev => {
+				const updatedMessages = [...prev];
+				updatedMessages.push(message);
+				return updatedMessages;
+			});
+		} catch (error) {
+			console.error("Error fetching message:", error);
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	async function fetchActionLocal(msgData: Types.Message[]) {
+		setLoading(true);
+	
+		const botMessage: Types.Message = {
+			id: String(Date.now()),
+			type: 'bot',
+			content: ''
+		};
+	
+		setMsgData(prev => [...prev, botMessage]);
+	
+		try {
+			const message = await fetchMessageLocal(msgData);
 	
 			setMsgData(prev => {
 				const updatedMessages = [...prev];
