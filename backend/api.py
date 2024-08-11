@@ -8,7 +8,7 @@ from service import (chat_pipeline, chat_stream_pipeline,
                      query_pipeline, rag_chat_final_use,
                      reset_chat_engine, get_chat_history,
                      single_agent, multi_agent,
-                     check_rag_usage, emotion_detection, keywords_highlight, )
+                     check_rag_usage, emotion_detection, keywords_highlight, history_summary)
 
 app = FastAPI()
 
@@ -113,8 +113,9 @@ def get_chat_history_endpoint():
 
 @app.post("/single_agent")
 def single_agent_endpoint(query: HistoryModel):
-    response = single_agent(query.user_query, query.history,False)
+    response = single_agent(query.user_query, query.history, False)
     return {"response": response}
+
 
 @app.post("/single_agent_stream")
 def single_agent_stream_endpoint(query: HistoryModel):
@@ -145,6 +146,12 @@ def check_rag_endpoint(history: HistoryModel):
 def keywords_highlight_endpoint(highlight: HighlightModel):
     result = keywords_highlight(highlight.user_query, highlight.bald_text)
     return {"keywords": result}
+
+
+@app.post("/history_summary")
+def history_summary_endpoint(query: HistoryModel):
+    summary = history_summary(query.history)
+    return {"response": summary}
 
 
 if __name__ == "__main__":
