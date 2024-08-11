@@ -15,7 +15,6 @@ export function getMessages(): Message[] {
     return JSON.parse(sessionStorage.getItem('messages') || '[]');
 }
 
-
 export async function fetchMessage(messages: Message[]): Promise<Message> {
     try {
         const openai = new OpenAI({ 
@@ -38,8 +37,6 @@ export async function fetchMessage(messages: Message[]): Promise<Message> {
         });
 
 
-
-    
         const botResponse = response.choices[0].message.content;
         console.log('botResponse:', botResponse);
     
@@ -191,3 +188,101 @@ export async function* fetchMessageStreamDify(messages: Message[]): AsyncIterabl
         console.error('Error in fetchMessageStreamDify:', error);
     }
 }
+
+// fetch msg from local with rag 
+// http:localhost:8000/single_agent
+// request:
+// {
+//     "user_query": "string",
+//     "history": [
+//       "string"
+//     ]
+//   }
+// response:
+// "string" (success)
+// 
+// or error:
+// {
+//   "detail": [
+//     {
+//       "loc": [
+//         "string",
+//         0
+//       ],
+//       "msg": "string",
+//       "type": "string"
+//     }
+//   ]
+// }
+export async function fetchMessageLocal(messages: Message[]): Promise<Message> {
+    try {
+        const response = await fetch("http://localhost:8000/single_agent", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_query: messages[messages.length - 1].content,
+                history: messages.map(msg => msg.content),
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+
+        if (data.detail) { // error response
+            throw new Error(data.detail[0].msg);
+        }
+
+        const botMessage: Message = {
+            id: String(Date.now()),
+            type: 'bot',
+            content: data.response,
+        };
+        return botMessage;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        throw new Error('Failed to fetch message from RAG.');
+    }
+}
+
+
+// 短文本在线合成-基础音库，请求地址：http://tsn.baidu.com/text2audio
+// API ID：99081331
+// APIKEY：HI9V7RVRZDPnVq2kkkQFnpTq
+// Secret Key：B2Z0qhoMCcSPd8Y59f2JV79JGfFVdWxN
+
+// baidu tts fetch
+export async function fetchTTSBaidu(text: string): Promise<string> {
+    try {
+        const response = await fetch("http://tsn.baidu.com/text2audio", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+                tex: text,
+                lan: 'zh',
+                ctp: 1,
+                tok: '25.613b05d3e97b773cf8c5c94312f9fabe.315360000.2038481187.282335-99081331',
+                cuid: '123456',
+                per: 0,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        return url;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        throw new Error('Failed to fetch TTS from Baidu.');
+    }
+}
+
