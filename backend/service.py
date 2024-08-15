@@ -16,7 +16,7 @@ from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.llms.openai import OpenAI
-from utils import gpt4o_call, gpt4o_history_call, gpt4o_history_call_stream
+from utils import gpt4o_call, gpt4o_history_call, gpt4o_history_call_stream, gpt4o_call_stream
 from llama_index.core.llms import ChatMessage, MessageRole
 
 _ = load_dotenv(find_dotenv("../env/.env"), override=True)
@@ -169,7 +169,6 @@ def chat_stream_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
     print("Execution Time:", execution_time)
 
 
-
 def condense_question_pipeline(user_query: str, history: List[Dict[str, Any]] = []):
     global condense_question_chat_engine
     if len(history) > 0:
@@ -294,11 +293,11 @@ def get_chat_history():
     return chat_history
 
 
-def single_agent(user_query: str, history: List[Dict[str, Any]],is_stream = False) -> Dict[str, Any]:
+def single_agent(user_query: str, history: List[Dict[str, Any]], is_stream=False) -> Dict[str, Any]:
     """Handles the single-agent conversation."""
     health_advisor_system = f'''
     # 角色描述
-    你是一位专业且富有同情心的医疗专家。你的目标是模拟真实医生的问诊，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
+    你是一位专业且富有同情心的医疗专家。你的目标是模拟真实医生的问诊，你要不停地询问用户的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
     你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
 
     ## 任务
@@ -307,12 +306,10 @@ def single_agent(user_query: str, history: List[Dict[str, Any]],is_stream = Fals
     - **彻底调查症状**：询问症状的持续时间、强度和性质。
     - **检查相关症状**：询问任何可能相关的症状。
     - **回顾病史**：确保了解任何先前的诊断或治疗。
-    - **提供清晰指导**：基于提供的信息，给出明确且可操作的建议。
-    - **确保理解**：确认患者理解你的建议和指示。
-
+    
     ## 输出要求
-    1. 每次只问一个问题，逐步思考，确保一次性提的问题不超过两个，并分点罗列。
-    2. 确保你的回答直接回应患者的问题，不要输出基本的寒暄。
+    1. 请先问问题，不要下诊断，具体询问患者对应的症状或者其他存疑情况，
+    2. 每次只问一个方面的问题，逐步思考，确保一次性提的问题不超过两个，并分点罗列。
     3. 在每轮对话中表现出同情心和专业性，告诉患者他的感觉是正常的，并做出回应，让他知道医生在倾听，提供实际的支持。
     4. 如果不确信已经足够了解病情，患者回答问题后请直接问下一个问题，以更好地了解病情。
     5. 如果患者表现出害怕、畏惧、恐慌等情绪，请先用一句话安抚患者的情绪，然后再提出一个问题，以更好地了解患者的情绪。
@@ -526,11 +523,43 @@ def keywords_highlight(user_query, bald_text):
 
     return keywords_list
 
+def history_summary(history):
+    # 生成历史对话的摘要
+    history_summary_system_prompt = f'''
+    你是一个对话摘要生成助手。在医院预问诊过程中，你的任务是帮助用户理解他们的健康问题。你需要根据用户的查询和历史对话，生成一个简洁的对话摘要，以帮助用户快速回顾对话内容。
+    请根据以下历史对话生成一个简洁的对话摘要。确保摘要简明扼要，包含对话的主要内容和重要信息。此外，请在摘要的最后添加一条建议或注意事项，以帮助用户进一步关注健康问题。
+    '''
+    history = str(history)
+    history_summary_response = gpt4o_call(
+        "gpt-4o-mini", history, history_summary_system_prompt)
+
+    return history_summary_response
+
+
 
 if __name__ == "__main__":
+    test_summary_history = [
+        { "role": "user", "content": "我头痛已经三天了。" },
+        { "role": "assistant", "content": "您是否有其他症状？" },
+        { "role": "user", "content": "我还有点发烧。" },
+        { "role": "assistant", "content": "请多喝水，休息一下。" },
+        { "role": "user", "content": "最近咳嗽得厉害，晚上睡不好。" },
+        { "role": "assistant", "content": "那真的很辛苦。咳嗽多久了？" },
+        { "role": "user", "content": "大概有一周了。" },
+        { "role": "assistant", "content": "除了咳嗽，还有其他症状吗，比如胸痛或者呼吸困难？" },
+        { "role": "user", "content": "有时候会觉得胸闷。" },
+        { "role": "assistant", "content": "明白了，胸闷可能是因为咳嗽引起的。你有没有尝试过一些止咳药？" },
+        { "role": "user", "content": "还没有。" },
+        { "role": "assistant", "content": "我建议你尝试一些温和的止咳药，当然，多喝温水也有帮助。如果情况没有好转，最好去看医生。" }
+    ]
+    summary = history_summary(test_summary_history)
+    print("history_summary response:", summary)
+
+
     # 测试单代理
     print("\nTesting single_agent:")
-    user_query = "我最近头疼得很厉害。"
+    user_query = "你好，最近感冒了，有什么要注意的，请按照markdown格式回答"
+    # user_query = "您好，最近很久没有人来看我了"
     history = []
     single_agent_response = single_agent(user_query, history)
     # print("single_agent response:", single_agent_response)
@@ -543,81 +572,81 @@ if __name__ == "__main__":
         user_query, health_history, therapy_history)
     # print("multi_agent response:", multi_agent_response)
 
-    # 测试情绪检测
-    print("\nTesting emotion_detection:")
-    text = "我最近总是觉得非常紧张，晚上睡不着觉。"
-    emotion_detection_response = emotion_detection(text)
-    # print("emotion_detection response:", emotion_detection_response)
+    # # 测试情绪检测
+    # print("\nTesting emotion_detection:")
+    # text = "我最近总是觉得非常紧张，晚上睡不着觉。"
+    # emotion_detection_response = emotion_detection(text)
+    # # print("emotion_detection response:", emotion_detection_response)
 
-    # 测试RAG使用检查
-    print("\nTesting check_rag_usage:")
-    history = [
-        {'role': 'user', 'content': "我最近头疼得很厉害。"},
-        {'role': 'assistant', 'content': "你头疼持续了多久？"}
-    ]
-    user_query = "请问LLM是什么？"
-    check_rag_usage_response = check_rag_usage(user_query, history)
-    # print("check_rag_usage response:", check_rag_usage_response)
+    # # 测试RAG使用检查
+    # print("\nTesting check_rag_usage:")
+    # history = [
+    #     {'role': 'user', 'content': "我最近头疼得很厉害。"},
+    #     {'role': 'assistant', 'content': "你头疼持续了多久？"}
+    # ]
+    # user_query = "请问LLM是什么？"
+    # check_rag_usage_response = check_rag_usage(user_query, history)
+    # # print("check_rag_usage response:", check_rag_usage_response)
 
-    # 测试关键词高亮
-    print("\nTesting keywords_highlight:")
-    bald_text = "高血压是一种常见的慢性病，治疗包括生活方式改变和药物治疗。"
-    keywords_highlight_response = keywords_highlight(user_query, bald_text)
-    # print("keywords_highlight response:", keywords_highlight_response)
+    # # 测试关键词高亮
+    # print("\nTesting keywords_highlight:")
+    # bald_text = "高血压是一种常见的慢性病，治疗包括生活方式改变和药物治疗。"
+    # keywords_highlight_response = keywords_highlight(user_query, bald_text)
+    # # print("keywords_highlight response:", keywords_highlight_response)
 
-    # 测试 chatPipeline
-    print("\nTesting chatPipeline:")
-    chat_pipeline_response, chat_pipeline_ref = chat_pipeline(user_query)
-    # print("chatPipeline response:", chat_pipeline_response)
-    # print("chatPipeline references:", chat_pipeline_ref)
+    # # 测试 chatPipeline
+    # print("\nTesting chatPipeline:")
+    # chat_pipeline_response, chat_pipeline_ref = chat_pipeline(user_query)
+    # # print("chatPipeline response:", chat_pipeline_response)
+    # # print("chatPipeline references:", chat_pipeline_ref)
 
-    print("\nTesting chatPipeline round 2:")
-    round2_user_query = "LLM怎么解决幻觉问题"
-    chat_pipeline_response, chat_pipeline_ref = chat_pipeline(
-        round2_user_query)
-    # print("chatPipeline response:", chat_pipeline_response)
-    # print("chatPipeline references:", chat_pipeline_ref)
+    # print("\nTesting chatPipeline round 2:")
+    # round2_user_query = "LLM怎么解决幻觉问题"
+    # chat_pipeline_response, chat_pipeline_ref = chat_pipeline(
+    #     round2_user_query)
+    # # print("chatPipeline response:", chat_pipeline_response)
+    # # print("chatPipeline references:", chat_pipeline_ref)
 
-    # 测试 ragPipeline
-    print("\nTesting ragPipeline:")
-    rag_pipeline_response, rag_pipeline_ref = query_pipeline(user_query)
-    # print("ragPipeline response:", rag_pipeline_response)
-    # print("ragPipeline references:", rag_pipeline_ref)
+    # # 测试 ragPipeline
+    # print("\nTesting ragPipeline:")
+    # rag_pipeline_response, rag_pipeline_ref = query_pipeline(user_query)
+    # # print("ragPipeline response:", rag_pipeline_response)
+    # # print("ragPipeline references:", rag_pipeline_ref)
 
-    # 获取聊天历史记录
-    print("\nGetting chat history:")
-    chat_history = get_chat_history()
-    print("Chat history:", chat_history)
+    # # 获取聊天历史记录
+    # print("\nGetting chat history:")
+    # chat_history = get_chat_history()
+    # print("Chat history:", chat_history)
 
-    # 重置 chat_engine
-    print("\nResetting chat engine:")
-    reset_response = reset_chat_engine()
-    print(reset_response)
+    # # 重置 chat_engine
+    # print("\nResetting chat engine:")
+    # reset_response = reset_chat_engine()
+    # print(reset_response)
 
-    # 测试 condense_question_pipeline
-    print("\nTesting condense_question_pipeline:")
-    condense_question_response, condense_question_ref = condense_question_pipeline(
-        user_query)
-    # print("condense_question_pipeline response:", condense_question_response)
-    # print("condense_question_pipeline references:", condense_question_ref)
+    # # 测试 condense_question_pipeline
+    # print("\nTesting condense_question_pipeline:")
+    # condense_question_response, condense_question_ref = condense_question_pipeline(
+    #     user_query)
+    # # print("condense_question_pipeline response:", condense_question_response)
+    # # print("condense_question_pipeline references:", condense_question_ref)
 
-    # 测试 context_chat_pipeline
-    print("\nTesting context_chat_pipeline:")
-    context_chat_response, context_chat_ref = context_chat_pipeline(user_query)
-    # print("context_chat_pipeline response:", context_chat_response)
-    # print("context_chat_pipeline references:", context_chat_ref)
+    # # 测试 context_chat_pipeline
+    # print("\nTesting context_chat_pipeline:")
+    # context_chat_response, context_chat_ref = context_chat_pipeline(user_query)
+    # # print("context_chat_pipeline response:", context_chat_response)
+    # # print("context_chat_pipeline references:", context_chat_ref)
 
-    # 测试 react_chat_pipeline
-    print("\nTesting react_chat_pipeline:")
-    react_chat_response, react_chat_ref = react_chat_pipeline(user_query)
-    # print("react_chat_pipeline response:", react_chat_response)
-    # print("react_chat_pipeline references:", react_chat_ref)
+    # # 测试 react_chat_pipeline
+    # print("\nTesting react_chat_pipeline:")
+    # react_chat_response, react_chat_ref = react_chat_pipeline(user_query)
+    # # print("react_chat_pipeline response:", react_chat_response)
+    # # print("react_chat_pipeline references:", react_chat_ref)
 
-    # 测试 rag_chat_final_use
-    print("\nTesting rag_chat_final_use:")
-    history = [{'role': 'user', 'content': "我最近头疼得很厉害。"},
-               {'role': 'assistant', 'content': "你头疼持续了多久？"}]
-    rag_chat_final_response, rag_chat_final_ref = rag_chat_final_use(
-        "请问LLM是什么？", history)
-    # print("rag_chat_final_use response:", rag_chat_final_response)
-    # print("rag_chat_final_use references:", rag_chat_final_ref)
+    # # 测试 rag_chat_final_use
+    # print("\nTesting rag_chat_final_use:")
+    # history = [{'role': 'user', 'content': "我最近头疼得很厉害。"},
+    #            {'role': 'assistant', 'content': "你头疼持续了多久？"}]
+    # rag_chat_final_response, rag_chat_final_ref = rag_chat_final_use(
+    #     "请问LLM是什么？", history)
+    # # print("rag_chat_final_use response:", rag_chat_final_response)
+    # # print("rag_chat_final_use references:", rag_chat_final_ref)

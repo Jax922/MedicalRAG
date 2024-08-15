@@ -112,6 +112,46 @@ def gpt4o_call(model, prompt, system_prompt, json=False):
     return response.choices[0].message.content
 
 
+def gpt4o_call_stream(model, prompt, system_prompt, json=False):
+    start = time.time()
+    client = OpenAI(
+        base_url=os.getenv("OPENAI_BASE_URL"),
+        api_key=os.getenv("OPENAI_API_KEY"),
+    )
+    if json:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{'role': 'system', 'content': system_prompt},
+                      {'role': 'user', 'content': prompt}],
+            # max_tokens=300,
+            # temperature=0.7,
+            # top_p=1,
+            response_format={"type": "json_object"},
+            stream=True
+        )
+    else:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{'role': 'system', 'content': system_prompt},
+                      {'role': 'user', 'content': prompt}],
+            # max_tokens=300,
+            # temperature=0.7,
+            # top_p=1,
+            # response_format={ "type": "json_object" },
+            stream=True
+        )
+    # stream=True
+    # for chunk in stream:
+    #     if chunk.choices[0].delta.content is not None:
+    #         print(chunk.choices[0].delta.content, end="")
+    # print(response)
+    for chunk in response:
+        if chunk.choices[0].delta.content is not None:
+            yield chunk.choices[0].delta.content
+    print("Response Time:", time.time()-start)
+    # return response
+
+
 def encode_image(image_path):
     # Function to encode the image
     with open(image_path, "rb") as image_file:
