@@ -3,6 +3,8 @@ import * as React from 'react';
 import * as Types from '@/lib/types';
 import { IconBot, IconUsers, IconSpeaker } from '@/components/ui/icon';
 import { fetchTTSBaidu } from '@/lib/actions'
+import ReactMarkdown from 'react-markdown';
+
 function BotMessage({ message }: { message: Types.Message }) {
 
 	// click button to support TTS
@@ -37,7 +39,10 @@ function BotMessage({ message }: { message: Types.Message }) {
 				<IconBot className="w-6 h-6 text-gray-700" />
 			</div>
 			<div className="flex-1 space-x-2 p-2 bg-gray-100 rounded-lg shadow-md">
-				<p className="text-2xl text-gray-800">{message.content}</p>
+				<ReactMarkdown className="text-2xl text-gray-800">
+					{message.content}
+				</ReactMarkdown>
+				{/* <p className="text-2xl text-gray-800">{message.content}</p> */}
 			</div>
 			{/* add click button to support TTS */}
 			<button className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ml-2  bg-green-600 hover:bg-green-700 focus:ring-green-700" onClick={handleClick}>
