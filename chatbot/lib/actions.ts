@@ -195,7 +195,8 @@ export async function* fetchMessageStreamDify(messages: Message[]): AsyncIterabl
 // {
 //     "user_query": "string",
 //     "history": [
-//       "string"
+//       {
+//}
 //     ]
 //   }
 // response:
@@ -223,7 +224,11 @@ export async function fetchMessageLocal(messages: Message[]): Promise<Message> {
             },
             body: JSON.stringify({
                 user_query: messages[messages.length - 1].content,
-                history: messages.map(msg => msg.content),
+                // history: messages.map(msg => msg.content),
+                history: messages.map(msg => ({
+                    role: msg.type === 'bot' ? 'assistant' : 'user',
+                    content: msg.content
+                })),
             }),
         });
 
@@ -232,17 +237,24 @@ export async function fetchMessageLocal(messages: Message[]): Promise<Message> {
         }
 
         const data = await response.json();
-
-        if (data.detail) { // error response
+        const result = data.response;
+        if (result.final_response) {
+            const botMessage: Message = {
+                id: String(Date.now()),
+                type: 'bot',
+                content: result.final_response,
+            };
+            return botMessage;
+        } else { // error response
             throw new Error(data.detail[0].msg);
         }
 
-        const botMessage: Message = {
-            id: String(Date.now()),
-            type: 'bot',
-            content: data.response,
-        };
-        return botMessage;
+        // const botMessage: Message = {
+        //     id: String(Date.now()),
+        //     type: 'bot',
+        //     content: data.response,
+        // };
+        // return botMessage;
     } catch (error) {
         console.error('Error fetching data:', error);
         throw new Error('Failed to fetch message from RAG.');
@@ -286,3 +298,65 @@ export async function fetchTTSBaidu(text: string): Promise<string> {
     }
 }
 
+
+// fetch RAG from local
+// request:
+// {
+//     "user_query": "string",
+//     "history": [
+//       "string"
+//     ]
+//   }
+
+// response: "string"
+// error response:
+// {
+//   "detail": [
+//     {
+//       "loc": [
+//         "string",
+//         0
+//       ],
+//       "msg": "string",
+//       "type": "string"
+//     }
+//   ]
+// }
+
+// http://localhost:8000/rag_chat_final_use
+
+export async function fetchRAGLocal(messages: Message[]): Promise<Message> {
+    try {
+        const response = await fetch("http://localhost:8000/rag_chat_final_use", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_query: messages[messages.length - 1].content,
+                history: messages.map(msg => msg.content),
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        const result = data.response;
+        console.log('result:', result);
+        if (result.final_response) {
+            const botMessage: Message = {
+                id: String(Date.now()),
+                type: 'bot',
+                content: result.final_response,
+            };
+            return botMessage;
+        } else { // error response
+            throw new Error(data.detail[0].msg);
+        }
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        throw new Error('Failed to fetch message from RAG.');
+    }
+}

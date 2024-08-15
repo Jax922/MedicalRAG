@@ -19,7 +19,7 @@ from llama_index.llms.openai import OpenAI
 from utils import gpt4o_call, gpt4o_history_call, gpt4o_history_call_stream
 from llama_index.core.llms import ChatMessage, MessageRole
 
-_ = load_dotenv(find_dotenv("../env/.env"))
+_ = load_dotenv(find_dotenv("../env/.env"), override=True)
 
 
 def initialize_settings(api_base, api_key, model, embed_model):

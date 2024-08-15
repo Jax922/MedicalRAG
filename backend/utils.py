@@ -16,6 +16,7 @@ def tool_list():
     print(list_tools())
     return list_tools()
 
+_API_KEY = "sk-PYA3tVflRzPFTeMbD09d1c2c928149A8867a31Cd71E6F71f"
 
 def gpt4o_history_call_stream(model, history, json=False):
     start = time.time()
@@ -45,10 +46,13 @@ def gpt4o_history_call_stream(model, history, json=False):
 
 def gpt4o_history_call(model, history, json=False):
     start = time.time()
+
     client = OpenAI(
         base_url=os.getenv("OPENAI_BASE_URL"),
         api_key=os.getenv("OPENAI_API_KEY"),
     )
+    print("url", os.getenv("OPENAI_BASE_URL"))
+    print("key", os.getenv("OPENAI_API_KEY"))
     messages = history if history else []
     if json:
         response = client.chat.completions.create(
@@ -58,6 +62,7 @@ def gpt4o_history_call(model, history, json=False):
             stream=False
         )
     else:
+        print("messages", messages)
         response = client.chat.completions.create(
             # max_tokens=300,
             model=model,

@@ -1,7 +1,7 @@
 'use client';
 import OlderPromptForm from "@/components/older/prompt-form";
 import OldMessage from "@/components/older/message";
-import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal } from "@/lib/actions";
+import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal, fetchRAGLocal } from "@/lib/actions";
 import SpeechToText from "@/components/older/speech";
 import * as Types from "@/lib/types";
 import * as React from "react";
@@ -34,13 +34,15 @@ export default function Chat() {
 	function saveAction(message: Types.Message) {
 		saveMessage(message);
 		const newMsgData = [...msgData, message];
+		console.log('newMsgData:', newMsgData);
 		setMsgData(newMsgData);
 		// fetchAction(newMsgData);
 		// fetchActionStream(newMsgData);
-		fetchActionDify(newMsgData);
+		// fetchActionDify(newMsgData);
 		// fetchActionStreamDify(newMsgData);
 
-		// fetchActionLocal(newMsgData);
+		fetchActionLocal(newMsgData);
+		fetchRAG(newMsgData);
 		
 	}
 
@@ -115,14 +117,6 @@ export default function Chat() {
 	async function fetchActionLocal(msgData: Types.Message[]) {
 		setLoading(true);
 	
-		const botMessage: Types.Message = {
-			id: String(Date.now()),
-			type: 'bot',
-			content: ''
-		};
-	
-		setMsgData(prev => [...prev, botMessage]);
-	
 		try {
 			const message = await fetchMessageLocal(msgData);
 	
@@ -131,6 +125,9 @@ export default function Chat() {
 				updatedMessages.push(message);
 				return updatedMessages;
 			});
+
+			console.log('msgData:', msgData);
+
 		} catch (error) {
 			console.error("Error fetching message:", error);
 		} finally {
@@ -173,6 +170,12 @@ export default function Chat() {
 	}	
 	
 
+	function fetchRAG(msgData: Types.Message[]) {
+		// fetchRAGLocal
+		setLoading(true);
+		
+		fetchRAGLocal(msgData)
+	}
 
 
   return (
