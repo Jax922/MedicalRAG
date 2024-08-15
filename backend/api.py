@@ -79,26 +79,38 @@ async def chat_endpoint(query: HistoryModel):
 
 @app.post("/rag_chat_final_use")
 def rag_chat_final_use_endpoint(query: HistoryModel):
-    response = rag_chat_final_use(query.user_query, query.history)
-    return {"response": response}
+    response, ref = rag_chat_final_use(query.user_query, query.history)
+    return {
+        "response": response,
+        "references": ref
+    }
 
 
 @app.post("/context_chat")
 def context_chat_endpoint(query: HistoryModel):
-    response = context_chat_pipeline(query.user_query, query.history)
-    return {"response": response}
+    response, ref = context_chat_pipeline(query.user_query, query.history)
+    return {
+        "response": response,
+        "references": ref
+    }
 
 
 @app.post("/react_chat")
 def react_chat_endpoint(query: HistoryModel):
-    response = react_chat_pipeline(query.user_query, query.history)
-    return {"response": response}
+    response, ref = react_chat_pipeline(query.user_query, query.history)
+    return {
+        "response": response,
+        "references": ref
+    }
 
 
 @app.post("/condense_question")
 def condense_question_endpoint(query: HistoryModel):
-    response = condense_question_pipeline(query.user_query, query.history)
-    return {"response": response}
+    response, ref = condense_question_pipeline(query.user_query, query.history)
+    return {
+        "response": response,
+        "references": ref
+    }
 
 
 @app.post("/reset")
@@ -114,6 +126,24 @@ def get_chat_history_endpoint():
 @app.post("/single_agent")
 def single_agent_endpoint(query: HistoryModel):
     response = single_agent(query.user_query, query.history, False)
+    return {"response": response}
+
+
+@app.post("/manual_input_endpoint")
+def manual_input_endpoint(query: HistoryModel):
+    # 格式化用户的查询和历史记录
+    formatted_history = "\n".join(
+        [f"{index + 1}. 【{'用户' if item['role'] == 'user' else '助手'}】: {item['content']}"
+         for index, item in enumerate(query.history)]
+    )
+
+    # 输出格式化内容
+    print(f"【用户】: {query.user_query}\n【历史记录】:\n{formatted_history}")
+
+    # 手动输入管理员的回复
+    response = input("请输入管理员的回复: ")
+
+    # 返回管理员输入的响应
     return {"response": response}
 
 
