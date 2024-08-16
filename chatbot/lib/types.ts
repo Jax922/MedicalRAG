@@ -1,9 +1,17 @@
+
+export type ReferenceItem = {
+  title: string;
+  content: string;
+}
+export type Reference = ReferenceItem[];
+
 export type MessageType = "user" | "bot";
 export type Message = {
   id: string;
   type: MessageType;
   content: string;
   status?: "sending" | "success" | "error";
+  references?: Reference;
 };
 
 export type SaveAction = (message: Message) => void;
