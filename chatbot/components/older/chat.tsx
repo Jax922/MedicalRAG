@@ -1,13 +1,45 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import OlderPromptForm from "@/components/older/prompt-form";
 import OldMessage from "@/components/older/message";
 import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal, fetchRAGLocal } from "@/lib/actions";
+import useWebSocket from "@/lib/websocket"
 import SpeechToText from "@/components/older/speech";
 import * as Types from "@/lib/types";
 import * as React from "react";
+import { isSameMessage } from '@/lib/utils';
+
 
 
 export default function Chat() {
+
+	const searchParams = useSearchParams();
+  	const doctor = searchParams.get('doctor'); 
+
+
+	const isDoctor = doctor === 'true';
+
+	if (isDoctor) {
+		const ws = useWebSocket((data) => {
+			const message = JSON.parse(data);
+			const isHasSameMessage = isSameMessage(message, msgData);
+			if (!isHasSameMessage) {
+				const newMsgData = [...msgData, message];
+				setMsgData(newMsgData);
+			}
+		})
+
+		React.useEffect(() => {
+			if (ws) {
+				console.log("Socket is connected and ready to use:", ws);
+			} else {
+				console.log("Socket is not ready yet.");
+			}
+		}, [ws]);
+	}
+
+
+
 
 	const [speechText, setSpeechText] = React.useState("");
 
@@ -36,14 +68,25 @@ export default function Chat() {
 		const newMsgData = [...msgData, message];
 		console.log('newMsgData:', newMsgData);
 		setMsgData(newMsgData);
+
+		if (isDoctor) {
+			sendMsg2Doctor(message);
+			return;
+		}
+
 		// fetchAction(newMsgData);
 		// fetchActionStream(newMsgData);
 		// fetchActionDify(newMsgData);
 		// fetchActionStreamDify(newMsgData);
 
 		fetchActionLocal(newMsgData);
-		fetchRAG(newMsgData);
+		// fetchRAG(newMsgData);
+
 		
+	}
+
+	function sendMsg2Doctor(message: Types.Message) {
+		ws.emit('message', JSON.stringify(message));
 	}
 
 	function fetchAction(msgData: Types.Message[]) {

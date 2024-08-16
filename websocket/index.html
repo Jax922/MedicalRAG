@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>问诊陪伴机器人-监控平台</title>
+    <style>
+      body { 
+        margin: 0; 
+        padding-bottom: 3rem; 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f4f7f6; 
+        color: #333; 
+      }
+
+      h1 {
+        text-align: center; 
+        color: #444; 
+        background-color: #f8f9fa; 
+        margin: 0; 
+        padding: 1rem; 
+        box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      #form { 
+        background: #ffffff;
+        padding: 0.5rem; 
+        position: fixed; 
+        bottom: 0; 
+        left: 0; 
+        right: 0; 
+        /* display: flex;  */
+        display: none;
+        height: 4rem; 
+        box-sizing: border-box; 
+        box-shadow: 0px -2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      #input { 
+        border: 2px solid #ddd; 
+        padding: 0 1rem; 
+        flex-grow: 1; 
+        border-radius: 20px; 
+        margin-right: 0.5rem; 
+        font-size: 1rem; 
+        transition: border 0.2s ease-in-out; 
+      }
+
+      #input:focus { 
+        outline: none; 
+        border: 2px solid #007bff; 
+      }
+
+      #form > button { 
+        background: #007bff; 
+        border: none; 
+        padding: 0 1rem; 
+        border-radius: 20px; 
+        outline: none; 
+        color: #fff; 
+        font-size: 1rem; 
+        transition: background 0.2s ease-in-out; 
+      }
+
+      #form > button:hover { 
+        background: #0056b3; 
+      }
+
+      #messages { 
+        list-style-type: none; 
+        margin: 1rem 0; 
+        padding: 0; 
+        max-height: calc(100vh - 8rem); 
+        overflow-y: auto;
+      }
+
+      #messages > li { 
+        padding: 0.75rem 1rem; 
+        margin: 0.5rem 1rem; 
+        border-radius: 15px; 
+        max-width: 80%; 
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+
+      #messages > li:nth-child(odd) { 
+        background: #007bff; 
+        color: white; 
+        align-self: flex-end; 
+        margin-left: auto; 
+        text-align: right;
+      }
+
+      #messages > li:nth-child(even) { 
+        background: #f1f1f1; 
+        color: #333; 
+        margin-right: auto; 
+      }
+    </style>
+  </head>
+  <body>
+    <h1>问诊陪伴机器人-监控平台</h1>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+      <input id="input" autocomplete="off" /><button>发送</button>
+    </form>
+  </body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (input.value) {
+        socket.emit('message', input.value);
+        input.value = '';
+        }
+    });
+
+    socket.on('message', (msg) => {
+        const item = document.createElement('li');
+
+        const message = JSON.parse(msg);
+        const content  = `
+            ${message.type == "bot" ? "医生" : "用户" } : 
+            ${message.content}
+        `;
+
+        item.innerText = content;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+  </script>
+</html>
