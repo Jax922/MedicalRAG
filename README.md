@@ -33,6 +33,9 @@ If you want to test the doctor real-person chat, you should run the WebSocket se
     node app.js # then you can see the message "Server is listening on port 8080", that means the WebSocket server is running
 ```
 
+The doctor client will connect to the WebSocket server to receive the real-person chat.
+The doctor client is running on the http://localhost:3000/doctor.
+
 You can open the browser and go to http://localhost:8080 to monitor the WebSocket server. In that page, you can see the real-time chat between the doctor and the older adults.
 
 ### Settings of RAG
