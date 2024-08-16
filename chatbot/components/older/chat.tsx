@@ -20,12 +20,12 @@ export default function Chat() {
 	const defaultKeywords = defaultKeywordString.split(',');
 	const [selectedOption, setSelectedOption] = React.useState("keyword");
 	const [keywords, setKeywords] = React.useState(defaultKeywords);
-
+	let ws:any = null;
 
 	const isDoctor = doctor === 'true';
 
 	if (isDoctor) {
-		const ws = useWebSocket((data) => {
+		ws = useWebSocket((data) => {
 			const message = JSON.parse(data);
 			const isHasSameMessage = isSameMessage(message, msgData);
 			if (!isHasSameMessage) {
