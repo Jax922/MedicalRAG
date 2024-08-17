@@ -107,7 +107,7 @@ condense_question_chat_engine = CondenseQuestionChatEngine.from_defaults(
     verbose=True,
 )
 
-chat_engine = index.as_chat_engine(chat_mode="best", verbose=True)
+chat_engine = index.as_chat_engine(chat_mode="best", verbose=True,similarity_top_k = 3)
 
 chat_engine_dict = {
     "default": chat_engine,
@@ -523,6 +523,7 @@ def keywords_highlight(user_query, bald_text):
 
     return keywords_list
 
+
 def history_summary(history):
     # 生成历史对话的摘要
     history_summary_system_prompt = f'''
@@ -536,29 +537,34 @@ def history_summary(history):
     return history_summary_response
 
 
-
 if __name__ == "__main__":
     test_summary_history = [
-        { "role": "user", "content": "我头痛已经三天了。" },
-        { "role": "assistant", "content": "您是否有其他症状？" },
-        { "role": "user", "content": "我还有点发烧。" },
-        { "role": "assistant", "content": "请多喝水，休息一下。" },
-        { "role": "user", "content": "最近咳嗽得厉害，晚上睡不好。" },
-        { "role": "assistant", "content": "那真的很辛苦。咳嗽多久了？" },
-        { "role": "user", "content": "大概有一周了。" },
-        { "role": "assistant", "content": "除了咳嗽，还有其他症状吗，比如胸痛或者呼吸困难？" },
-        { "role": "user", "content": "有时候会觉得胸闷。" },
-        { "role": "assistant", "content": "明白了，胸闷可能是因为咳嗽引起的。你有没有尝试过一些止咳药？" },
-        { "role": "user", "content": "还没有。" },
-        { "role": "assistant", "content": "我建议你尝试一些温和的止咳药，当然，多喝温水也有帮助。如果情况没有好转，最好去看医生。" }
+        {"role": "user", "content": "我头痛已经三天了。"},
+        {"role": "assistant", "content": "您是否有其他症状？"},
+        {"role": "user", "content": "我还有点发烧。"},
+        {"role": "assistant", "content": "请多喝水，休息一下。"},
+        {"role": "user", "content": "最近咳嗽得厉害，晚上睡不好。"},
+        {"role": "assistant", "content": "那真的很辛苦。咳嗽多久了？"},
+        {"role": "user", "content": "大概有一周了。"},
+        {"role": "assistant", "content": "除了咳嗽，还有其他症状吗，比如胸痛或者呼吸困难？"},
+        {"role": "user", "content": "有时候会觉得胸闷。"},
+        {"role": "assistant", "content": "明白了，胸闷可能是因为咳嗽引起的。你有没有尝试过一些止咳药？"},
+        {"role": "user", "content": "还没有。"},
+        {"role": "assistant", "content": "我建议你尝试一些温和的止咳药，当然，多喝温水也有帮助。如果情况没有好转，最好去看医生。"}
     ]
     summary = history_summary(test_summary_history)
     print("history_summary response:", summary)
 
+    print("\nTesting rag_final_use:")
+    user_query = '我今年65岁了，高血压也有一点，有什么主意事项吗'
+    rag_response,ref = rag_chat_final_use(user_query, [])
+    print("rag_final_use response:", rag_response)
+    print("rag_final_use references:", ref)
 
     # 测试单代理
     print("\nTesting single_agent:")
-    user_query = "你好，最近感冒了，有什么要注意的，请按照markdown格式回答"
+    user_query = "最近心脏不舒服，是不是有心脏病了？"
+    # user_query = "你好，最近感冒了，有什么要注意的，请按照markdown格式回答"
     # user_query = "您好，最近很久没有人来看我了"
     history = []
     single_agent_response = single_agent(user_query, history)
