@@ -3,6 +3,7 @@
 import { Message } from '@/lib/types';
 import OpenAI from "openai";
 import SYSTEM_PROMPT from "@/lib/prompting";
+import { toReference } from "@/lib/utils";
 
 // 本地化，基于session Storage, 存储bot和user的msg
 export function saveMessage(msg: Message) {
@@ -304,7 +305,10 @@ export async function fetchTTSBaidu(text: string): Promise<string> {
 // {
 //     "user_query": "string",
 //     "history": [
-//       "string"
+//              {
+            // "role": "string",
+            // "content": "string"
+            // }
 //     ]
 //   }
 
@@ -334,7 +338,10 @@ export async function fetchRAGLocal(messages: Message[]): Promise<Message> {
             },
             body: JSON.stringify({
                 user_query: messages[messages.length - 1].content,
-                history: messages.map(msg => msg.content),
+                history: messages.map(msg => ({
+                    role: msg.type === 'bot' ? 'assistant' : 'user',
+                    content: msg.content
+                })),
             }),
         });
 
@@ -343,13 +350,14 @@ export async function fetchRAGLocal(messages: Message[]): Promise<Message> {
         }
 
         const data = await response.json();
-        const result = data.response;
+        const result = data
         console.log('result:', result);
-        if (result.final_response) {
+        if (result.response) {
             const botMessage: Message = {
                 id: String(Date.now()),
                 type: 'bot',
-                content: result.final_response,
+                content: result.response,
+                references: toReference(result.references),
             };
             return botMessage;
         } else { // error response
@@ -358,5 +366,29 @@ export async function fetchRAGLocal(messages: Message[]): Promise<Message> {
     } catch (error) {
         console.error('Error fetching data:', error);
         throw new Error('Failed to fetch message from RAG.');
+    }
+}
+
+
+// reset the history of the chat
+export async function fetchResetHistory(): Promise<void> {
+    try {
+        const response = await fetch("http://localhost:8000/reset", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        console.log('data:', data);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        throw new Error('Failed to reset history.');
     }
 }

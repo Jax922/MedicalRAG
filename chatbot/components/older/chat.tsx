@@ -1,13 +1,79 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import OlderPromptForm from "@/components/older/prompt-form";
 import OldMessage from "@/components/older/message";
-import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal, fetchRAGLocal } from "@/lib/actions";
+import RagRef from "@/components/older/rag-ref";
+import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal, fetchRAGLocal, fetchResetHistory } from "@/lib/actions";
+import useWebSocket from "@/lib/websocket"
 import SpeechToText from "@/components/older/speech";
 import * as Types from "@/lib/types";
 import * as React from "react";
+import { isSameMessage } from '@/lib/utils';
+
 
 
 export default function Chat() {
+
+	const searchParams = useSearchParams();
+  	const doctor = searchParams.get('doctor'); 
+	const defaultKeywordString = "高血压,高血压病,冠心病,心脏病,心力衰竭,心衰,心力不足,动脉粥样硬化,动脉硬化,血管硬化,糖尿病,血糖高,慢性阻塞性肺疾病,慢性支气管炎,肺气肿,哮喘,喘息病,肺炎,肺部感染,阿尔茨海默病,老年痴呆,痴呆症,前列腺增生,前列腺肥大,前列腺问题,尿失禁,尿漏,尿路感染,尿道炎"
+	const defaultKeywords = defaultKeywordString.split(',');
+	const [selectedOption, setSelectedOption] = React.useState("keyword");
+	const [keywords, setKeywords] = React.useState(defaultKeywords);
+	let ws:any = null;
+
+	const isDoctor = doctor === 'true';
+
+	if (isDoctor) {
+		ws = useWebSocket((data) => {
+			const message = JSON.parse(data);
+			const isHasSameMessage = isSameMessage(message, msgData);
+			if (!isHasSameMessage) {
+				const newMsgData = [...msgData, message];
+				setMsgData(newMsgData);
+			}
+		})
+
+		React.useEffect(() => {
+			if (ws) {
+				console.log("Socket is connected and ready to use:", ws);
+			} else {
+				console.log("Socket is not ready yet.");
+			}
+		}, [ws]);
+	}
+
+
+	if (!isDoctor) {
+
+		React.useEffect(() => {
+			async function fetchSettings() {
+			  try {
+				const response = await fetch('/api/setting', {
+				  method: 'GET',
+				  headers: {
+					'Content-Type': 'application/json',
+				  },
+				});
+				if (!response.ok) {
+				  throw new Error('网络响应不是 OK');
+				}
+				const data = await response.json();
+				setSelectedOption(data.option || 'keyword');
+				setKeywords(data.keywords.split(',') || []);
+			  } catch (error) {
+				// setError(error.message);
+			  } finally {
+				// setLoading(false);
+			  }
+			}
+			fetchSettings();
+		  }, []); 
+
+	}
+
+
+
 
 	const [speechText, setSpeechText] = React.useState("");
 
@@ -36,14 +102,51 @@ export default function Chat() {
 		const newMsgData = [...msgData, message];
 		console.log('newMsgData:', newMsgData);
 		setMsgData(newMsgData);
+
+		if (isDoctor) {
+			sendMsg2Doctor(message);
+			return;
+		}
+
 		// fetchAction(newMsgData);
 		// fetchActionStream(newMsgData);
 		// fetchActionDify(newMsgData);
 		// fetchActionStreamDify(newMsgData);
 
-		fetchActionLocal(newMsgData);
-		fetchRAG(newMsgData);
+		if (selectedOption === 'keyword') {
+			console.log('keywords fetch');
+			if (keywords.some((keyword) => message.content.includes(keyword))) {
+				console.log('rag fetch');
+				fetchResetHistory();
+				fetchRAG(newMsgData);
+			} else {
+				console.log('non-rag fetch');
+				fetchActionLocal(newMsgData);
+			}
+			return;
+		}
+
+		if (selectedOption === 'all') {
+			console.log('all rag fetch');
+			console.log('rag fetch');
+			fetchResetHistory();
+			fetchRAG(newMsgData);
+			return;
+		}
+
+		if (selectedOption === 'none') {
+			console.log('none rag fetch');
+			console.log('non-rag fetch');
+			fetchActionLocal(newMsgData);
+			return
+		}
+
+		// fetchActionLocal(newMsgData);
 		
+	}
+
+	function sendMsg2Doctor(message: Types.Message) {
+		ws.emit('message', JSON.stringify(message));
 	}
 
 	function fetchAction(msgData: Types.Message[]) {
@@ -170,11 +273,26 @@ export default function Chat() {
 	}	
 	
 
-	function fetchRAG(msgData: Types.Message[]) {
+	async function fetchRAG(msgData: Types.Message[]) {
 		// fetchRAGLocal
 		setLoading(true);
 		
-		fetchRAGLocal(msgData)
+		try {
+			const message = await fetchRAGLocal(msgData);
+	
+			setMsgData(prev => {
+				const updatedMessages = [...prev];
+				updatedMessages.push(message);
+				return updatedMessages;
+			});
+
+			console.log('msgData:', msgData);
+
+		} catch (error) {
+			console.error("Error fetching message:", error);
+		} finally {
+			setLoading(false)
+		}
 	}
 
 
@@ -182,7 +300,7 @@ export default function Chat() {
     <div className="flex flex-col items-start justify-between h-full">
 			<div className="flex flex-col items-start gap-4 p-4 w-full">
 				{msgData.map((message) => (
-					<OldMessage key={message.id} message={message} />
+					<OldMessage key={message.id} message={message} references={message.references}/>
 				))}
 			</div>
 			{	loading &&

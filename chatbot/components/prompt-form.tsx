@@ -5,9 +5,14 @@ import Textarea from 'react-textarea-autosize'
 import { IconArrowElbow } from "@/components/ui/icon";
 import { SaveAction } from "@/lib/types";
 
-export default function PromptForm({saveAction}: {saveAction: SaveAction}) {
+export default function PromptForm({saveAction, placeholder, isDoctor=false}: {saveAction: SaveAction, placeholder: string, isDoctor?: boolean}) {
     const [inputValue, setInputValue] = React.useState("");
+    const defaultPlaceholder = "请描述您的症状、患病时长、检查报告、用药情况等信息";
+    let placeholderValue = defaultPlaceholder;
 
+    if (placeholder != "") {
+        placeholderValue = placeholder
+    }
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setInputValue(e.target.value);
     }
@@ -17,7 +22,7 @@ export default function PromptForm({saveAction}: {saveAction: SaveAction}) {
         if (inputValue.trim()) {
             saveAction({
                 id: String(Date.now()),
-                type: 'user',
+                type: isDoctor ? 'bot' : 'user',
                 content: inputValue
             });
             setInputValue("");
@@ -28,7 +33,7 @@ export default function PromptForm({saveAction}: {saveAction: SaveAction}) {
         <form onSubmit={handleSubmit} className="relative flex flex-row items-center justify-between w-full">
             <Textarea
                 className="min-h-[30px] w-full resize-none bg-transparent px-5 py-[1.3rem] focus-within:outline-none sm:text-sm border border-gray-300 rounded-lg px-right-12 pr-12"
-                placeholder="请描述您的症状、患病时长、检查报告、用药情况等信息"
+                placeholder={placeholderValue}
                 minRows={1}
                 maxRows={3}
                 spellCheck={false}
