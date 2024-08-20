@@ -49,7 +49,7 @@ const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void }> = ({ 
         classNames="hint"
         unmountOnExit
       >
-        <div className="text-xl p-4 text-center bg-yellow-100 border border-yellow-300 rounded-md">
+        <div className="text-[2.5rem] p-4 text-center bg-yellow-100 border border-yellow-300 rounded-md">
           {listening ? '录音中... 点击按钮可以暂停录音' : '点击按钮开始语音输入'}
         </div>
       </CSSTransition>

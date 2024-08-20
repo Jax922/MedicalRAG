@@ -8,12 +8,13 @@ import { ReferenceItem, Reference } from "@/lib/types";
 
 function RefItem({ referenceItem, index }: { referenceItem: ReferenceItem, index: number }) {
     return (
-        <div className={cn("")}>
-            <h3 className={cn("text-lg font-semibold")}>
+        <div className={cn("!mt-[1.5rem]")}>
+            <p className={cn("text-[2.5rem] leading-tight")}>
                 参考[{index+1}]:
-                <span className="text-blue-600 underline ml-2">{referenceItem.title}</span>
-            </h3>
-            <div className={cn("text-sm text-gray-700")}>{referenceItem.content}</div>
+                <span className="text-blue-600 ml-2">{referenceItem.title}</span>
+            </p>
+            {/* 暂时不展示细节 */}
+            {/* <div className={cn("text-sm text-gray-700")}>{referenceItem.content}</div> */}
         </div>
     );
 }
@@ -28,7 +29,7 @@ export default function RagRef({ references }: { references: Reference }) {
     return (
         <div className={cn("p-4 rounded-md shadow-sm border border-gray-500")}>
             <div className={cn("flex justify-between items-center mb-2")}>
-                <h3 className={cn("text-lg font-semibold")}>健康知识库匹配结果：</h3>
+                <h3 className={cn("text-[2.5rem] font-semibold")}>健康知识库匹配结果：</h3>
                 <button
                     onClick={toggleExpand}
                     className={cn("focus:outline-none text-blue-500 hover:text-blue-600")}

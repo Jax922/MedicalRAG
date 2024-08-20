@@ -8,7 +8,7 @@ export default function Home() {
         <OlderHeader />
       </div>
       <div className="w-full flex justify-center p-4 bg-white shadow-md">
-        <div className="w-full max-w-md md:max-w-2xl">
+        <div className="w-full max-w-full lg:max-w-5xl">
           <OlderChat />
         </div>
       </div>
