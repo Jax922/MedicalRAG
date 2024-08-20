@@ -29,13 +29,13 @@ export default function PromptForm({saveAction, text}: {saveAction: SaveAction, 
     }
 
     return (
-        <form onSubmit={handleSubmit} className="relative flex flex-row items-center justify-between w-full text-xl"
-        style={{ fontSize: '1.25rem' }}
+        <form onSubmit={handleSubmit} className="relative flex flex-row items-center justify-between w-full"
         >
             <Textarea
-                style={{ fontSize: '1.25rem', fontWeight: 'bolder' }}
-                className="text-xl min-h-[50px] w-full resize-none bg-transparent px-5 py-[1.3rem] focus-within:outline-none sm:text-sm border border-gray-300 rounded-lg px-right-12 pr-12"
-                placeholder="请描述您的症状、患病时长、检查报告、用药情况等信息"
+                style={{
+                }}
+                className="!text-[2.5rem] min-h-[60px] w-full resize-none bg-transparent px-5 py-[2rem] focus-within:outline-none sm:text-sm border border-gray-300 rounded-lg px-right-12 pr-[7rem] !leading-tight"
+                placeholder="您有什么想跟我说"  
                 minRows={1}
                 maxRows={3}
                 spellCheck={false}
@@ -59,9 +59,9 @@ export default function PromptForm({saveAction, text}: {saveAction: SaveAction, 
 
                     }
                 }
-                style={{ fontSize: '1.25rem' }}
+                style={{ fontSize: '2.5rem' }}
                 className={cn(
-                    "absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-md",
+                    "absolute right-6 top-1/2 transform -translate-y-1/2 p-4 rounded-md",
                     inputValue ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'
                 )}
                 disabled={!inputValue.trim()}
