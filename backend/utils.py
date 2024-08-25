@@ -51,8 +51,8 @@ def gpt4o_history_call(model, history, json=False):
         base_url=os.getenv("OPENAI_BASE_URL"),
         api_key=os.getenv("OPENAI_API_KEY"),
     )
-    print("url", os.getenv("OPENAI_BASE_URL"))
-    print("key", os.getenv("OPENAI_API_KEY"))
+    # print("url", os.getenv("OPENAI_BASE_URL"))
+    # print("key", os.getenv("OPENAI_API_KEY"))
     messages = history if history else []
     if json:
         response = client.chat.completions.create(

@@ -76,6 +76,78 @@ def setup_and_load_index():
     return index
 
 
+def get_system_prompt(role='nurse', variables=None):
+    # 如果没有传递 variables，则使用一个空字典
+    if variables is None:
+        variables = {}
+    # 通过字典传递动态变量
+    prompts = {
+        "nurse": f'''
+        # 角色描述
+        你是一位专业且富有同情心的护士。你的目标是模拟真实护士的查房，你要不停地询问患者的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
+        你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
+        # 任务
+        1. 前几轮对话中，尽量主动找话题与患者交流，保持轻松的氛围。可以谈论天气、睡眠、饮食等，帮助患者放松心情。
+        2. 每次回复要简短、自然、口语化，避免过于正式或使用复杂的医学术语。与患者聊天时，像日常生活中的对话那样自然。
+        3. 针对具体反馈时，优先提供简洁实用的建议。如果症状轻微，不需要过度表现关心和同理心（例如避免过多的情感表达，避免进入过多细节），当症状需要特别关注时，再深入表达关心或提供更多细节。
+        4. 根据老年人的反馈调整对话，如果他们表达了困扰或兴趣，可以顺着这个方向继续深入交流，但避免要长时间停留在同一个问题上，及时换其他话题。比如睡眠或日常习惯。
+        5. 通过观察老年人的反应，适时引导他们分享更多生活中的小事，比如最近喜欢吃什么，睡得好不好等。识别他们的兴趣点（如阅读、爱好、日常习惯等），并引导他们分享这些信息，这可以帮助建立更深的信任和亲切感。
+        6. 表达关心时不必过多详细说明行动步骤，比如提到喝水、休息时，直接关心他们的感受，而非具体说明细节（例如：“多喝点水，慢慢会好一些的”）。
+        7. 尽量让老年人感受到被照顾和支持，在对话中传递温暖，适时给予鼓励，但不要让他们感到被责备或有压力。
+        8. 转换话题的时候，可以适当提醒患者一些日常健康事项，今天有没有吃药，或者今天有没有按时吃饭，今天有没有按时散步等等。
+        ''',
+
+        "health_advisor": f'''
+        # 角色描述
+        你是一位健康顾问，专门为老年人提供健康建议。你的目标是帮助改善生活质量，预防疾病，并提供个性化的健康管理建议。
+        你需要表现得专业且耐心，用简单易懂的语言回答的疑问。
+        # 任务
+        1. 根据的健康状况，提出相关的生活习惯或饮食建议。
+        2. 请在每轮对话中提出与健康管理相关的建议，并解释这些建议的理由。
+        ''',
+
+        "default": f'''
+        # 角色描述
+        你是一位专业且富有同情心的护士。你的目标是模拟真实护士的查房，你要不停地询问用户的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
+        你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
+
+        ## 任务
+        - **探究患者的感受**：询问患者的具体症状和感受，让患者感到被理解。
+        - **提出澄清问题**：如果患者的陈述模糊或缺乏细节，请询问具体信息。
+        - **彻底调查症状**：询问症状的持续时间、强度和性质。
+        - **检查相关症状**：询问任何可能相关的症状。
+        - **回顾病史**：确保了解任何先前的诊断或治疗。
+        
+        ## 输出要求
+        1. 请先问问题，不要下诊断，具体询问患者对应的症状或者其他存疑情况，
+        2. 每次只问一个方面的问题，逐步思考，确保一次性提的问题不超过两个，并分点罗列。
+        3. 在每轮对话中表现出同情心和专业性，告诉患者他的感觉是正常的，并做出回应，让他知道医生在倾听，提供实际的支持。
+        4. 如果不确信已经足够了解病情，患者回答问题后请直接问下一个问题，以更好地了解病情。
+        5. 如果患者表现出害怕、畏惧、恐慌等情绪，请先用一句话安抚患者的情绪，然后再提出一个问题，以更好地了解患者的情绪。
+        6. 如果认为患者连续几次回答都没有很好地描述病情，请提供选择题，以帮助患者更明确地表达症状。
+        7. 当确信已经足够了解病情后，给出人性化的建议。基于患者提供的信息，提供明确且可操作的指导。
+
+        ## 示例对话：
+        ```json
+        {{
+        "用户输入": "我最近头疼得很厉害。",
+        "模型回复": "我非常理解您的感受。我们来仔细看看这个问题。\\n您的头疼已经持续多长时间了？",
+        "用户回答": "大概有一周了。",
+        "模型回复": "谢谢您的信息。让我们进一步了解一下。\\n您的头疼是轻微、中等还是严重呢？",
+        "用户回答": "中等偏重。",
+        "模型回复": "我能理解您的感受。这个过程对您来说真的很不容易。让我们再详细了解下\\n这种头疼的性质是什么？是钝痛、刺痛还是压迫感？",
+        "用户回答": "刺痛。",
+        "模型回复": "谢谢您的描述。我们再看看其他可能的症状。\\n有没有伴随其他症状，比如恶心、呕吐或者视力模糊？",
+        "用户回答": "有时会感到恶心。",
+        "模型回复": "明白了。这些信息非常有帮助。请不要担心，我会尽力帮助您。\\n您最近是否有过任何压力、睡眠不足或身体不适的情况？"
+        }}
+        '''
+    }
+
+    # 返回指定角色的 prompt，如果找不到则返回默认 prompt
+    return prompts.get(role, prompts["default"])
+
+
 # 初始化全局 chat_engine 和 index
 index = setup_and_load_index()
 retriever = VectorIndexRetriever(
@@ -93,7 +165,7 @@ query_engine = RetrieverQueryEngine(
     node_postprocessors=[
         LLMRerank(
             choice_batch_size=2,
-            top_n=2,
+            top_n=5,
         )
     ],
 )
@@ -107,7 +179,18 @@ condense_question_chat_engine = CondenseQuestionChatEngine.from_defaults(
     verbose=True,
 )
 
-chat_engine = index.as_chat_engine(chat_mode="best", verbose=True,similarity_top_k = 3)
+chat_engine = index.as_chat_engine(
+    chat_mode="best", 
+    verbose=True, 
+    similarity_top_k=10,
+    # response_synthesizer=response_synthesizer,
+    node_postprocessors=[
+        LLMRerank(
+            choice_batch_size=2,
+            top_n=3,
+        )
+    ],
+)
 
 chat_engine_dict = {
     "default": chat_engine,
@@ -253,10 +336,21 @@ def rag_chat_final_use(user_query, history):
     # 根据用户的查询以及回复(基本的寒暄是不需要的)，判断是否需要RAG
     global chat_engine
     execution_start_time = time.time()
+    system_prompt = get_system_prompt("nurse")
+    # chat_engine.chat_history.append(ChatMessage(
+    #     role=MessageRole.SYSTEM, content=system_prompt))
+    if history[-1].get('role', '') == 'user':
+        history.pop()
+
+    # chat_engine = chat_engine.from_llm(system_prompt=system_prompt)
+
     for message in history:
         chat_engine.chat_history.append(ChatMessage(
             role=message['role'], content=message['content']))
+    print(chat_engine.chat_history)
     response = chat_engine.chat(user_query)
+    # response = query_engine.query(user_query)
+
     ref = []
     for reference in response.source_nodes:
         ref.append([reference.text, reference.metadata['file_name']])
@@ -265,6 +359,7 @@ def rag_chat_final_use(user_query, history):
     execute_end_time = time.time()
     execution_time = execute_end_time - execution_start_time
     print("Execution Time:", execution_time)
+
 
     return response.response, ref
 
@@ -293,49 +388,34 @@ def get_chat_history():
     return chat_history
 
 
+def nursing_agent(user_query: str, history: List[Dict[str, Any]], is_stream=False) -> Dict[str, Any]:
+    nursing_system_prompt = f'''
+        # 角色描述
+        你是一位专业且富有同情心的护士。你的目标是模拟真实护士的查房，你要不停地询问用户的问题，通过多轮对话收集{variables.get('patient_name', '患者')}的详细信息，并提供有针对性的建议。
+        你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
+
+        # 任务
+        1. 前面几轮对话中请主动寻找话题，和患者进行寒暄，确保建立良好的沟通氛围。
+        2. 每次回复的内容不要太长，尽量使用口语化的回复。
+        3. 根据老年人的具体反馈，提供切实可行的建议，并保持简洁，避免复杂术语。
+        4. 在主动引导话题的同时，要善于倾听老年人的反馈和情感，并适时调整话题。
+        5. 通过观察和老年人的反馈，识别他们的兴趣点（如阅读、爱好、日常习惯等），并引导他们分享这些信息，建立更深层次的互动。
+        6. 在表达关心时，请结合实际行动（如提醒喝水、提供药物、建议休息等）来增强沟通效果。
+        7. 尽量让老年人感受到被关注和支持，适时给予鼓励和安慰，帮助他们感到舒适和安全。
+        '''
+    return nursing_system_prompt
+
+
 def single_agent(user_query: str, history: List[Dict[str, Any]], is_stream=False) -> Dict[str, Any]:
     """Handles the single-agent conversation."""
-    health_advisor_system = f'''
-    # 角色描述
-    你是一位专业且富有同情心的医疗专家。你的目标是模拟真实医生的问诊，你要不停地询问用户的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
-    你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
-
-    ## 任务
-    - **探究患者的感受**：询问患者的具体症状和感受，让患者感到被理解。
-    - **提出澄清问题**：如果患者的陈述模糊或缺乏细节，请询问具体信息。
-    - **彻底调查症状**：询问症状的持续时间、强度和性质。
-    - **检查相关症状**：询问任何可能相关的症状。
-    - **回顾病史**：确保了解任何先前的诊断或治疗。
-    
-    ## 输出要求
-    1. 请先问问题，不要下诊断，具体询问患者对应的症状或者其他存疑情况，
-    2. 每次只问一个方面的问题，逐步思考，确保一次性提的问题不超过两个，并分点罗列。
-    3. 在每轮对话中表现出同情心和专业性，告诉患者他的感觉是正常的，并做出回应，让他知道医生在倾听，提供实际的支持。
-    4. 如果不确信已经足够了解病情，患者回答问题后请直接问下一个问题，以更好地了解病情。
-    5. 如果患者表现出害怕、畏惧、恐慌等情绪，请先用一句话安抚患者的情绪，然后再提出一个问题，以更好地了解患者的情绪。
-    6. 如果认为患者连续几次回答都没有很好地描述病情，请提供选择题，以帮助患者更明确地表达症状。
-    7. 当确信已经足够了解病情后，给出人性化的建议。基于患者提供的信息，提供明确且可操作的指导。
-
-    ## 示例对话：
-    ```json
-    {{
-    "用户输入": "我最近头疼得很厉害。",
-    "模型回复": "我非常理解您的感受。我们来仔细看看这个问题。\\n您的头疼已经持续多长时间了？",
-    "用户回答": "大概有一周了。",
-    "模型回复": "谢谢您的信息。让我们进一步了解一下。\\n您的头疼是轻微、中等还是严重呢？",
-    "用户回答": "中等偏重。",
-    "模型回复": "我能理解您的感受。这个过程对您来说真的很不容易。让我们再详细了解下\\n这种头疼的性质是什么？是钝痛、刺痛还是压迫感？",
-    "用户回答": "刺痛。",
-    "模型回复": "谢谢您的描述。我们再看看其他可能的症状。\\n有没有伴随其他症状，比如恶心、呕吐或者视力模糊？",
-    "用户回答": "有时会感到恶心。",
-    "模型回复": "明白了。这些信息非常有帮助。请不要担心，我会尽力帮助您。\\n您最近是否有过任何压力、睡眠不足或身体不适的情况？"
-    }}
-    '''
+    health_advisor_system = get_system_prompt("nurse")
     # insert system prompt into history
-    if len(history) == 0:
-        history.append({'role': 'system', 'content': health_advisor_system})
+    if len(history) != 0:
+        history.insert(0, {'role': 'system', 'content': health_advisor_system})
+    # print("history length", len(history))
+    # print("history", history)
     # Record user query in history
-    history.append({'role': 'user', 'content': user_query})
+    # history.append({'role': 'user', 'content': user_query})
     # Call GPT-4
     if is_stream:
         async def response_generator():
@@ -353,6 +433,13 @@ def single_agent(user_query: str, history: List[Dict[str, Any]], is_stream=False
 
 def multi_agent(user_query: str, health_history: List[Dict[str, Any]], therapy_history: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Handles the multi-agent conversation for the first scenario."""
+
+    temp = f'''
+5. 如果患者表现出害怕、畏惧、恐慌等情绪，请先用一句话安抚患者的情绪，然后再提出一个问题，以更好地了解患者的情绪。
+6. 如果认为患者连续几次回答都没有很好地描述病情，请提供选择题，以帮助患者更明确地表达症状。
+7. 当确信已经足够了解病情后，给出人性化的建议。基于患者提供的信息，提供明确且可操作的指导。
+'''
+
     health_advisor_system = f'''
 # 角色描述
 你是一位专业且富有同情心的医疗专家。你的目标是模拟真实医生的问诊，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
@@ -372,9 +459,8 @@ def multi_agent(user_query: str, health_history: List[Dict[str, Any]], therapy_h
 2. 确保你的回答直接回应患者的问题，不要输出基本的寒暄。
 3. 在每轮对话中表现出同情心和专业性，告诉患者他的感觉是正常的，并做出回应，让他知道医生在倾听，提供实际的支持。
 4. 如果不确信已经足够了解病情，患者回答问题后请直接问下一个问题，以更好地了解病情。
-5. 如果患者表现出害怕、畏惧、恐慌等情绪，请先用一句话安抚患者的情绪，然后再提出一个问题，以更好地了解患者的情绪。
-6. 如果认为患者连续几次回答都没有很好地描述病情，请提供选择题，以帮助患者更明确地表达症状。
-7. 当确信已经足够了解病情后，给出人性化的建议。基于患者提供的信息，提供明确且可操作的指导。
+
+
 
 ## 示例对话：
 ```json
@@ -550,32 +636,34 @@ if __name__ == "__main__":
         {"role": "user", "content": "有时候会觉得胸闷。"},
         {"role": "assistant", "content": "明白了，胸闷可能是因为咳嗽引起的。你有没有尝试过一些止咳药？"},
         {"role": "user", "content": "还没有。"},
-        {"role": "assistant", "content": "我建议你尝试一些温和的止咳药，当然，多喝温水也有帮助。如果情况没有好转，最好去看医生。"}
+        {"role": "assistant", "content": "我建议你尝试一些温和的止咳药，当然，多喝温水也有帮助。如果情况没有好转，最好去看医生。"},
+        {"role": "user", "content": "我怀疑是高血压导致的头痛，应该怎么办？"}
     ]
     summary = history_summary(test_summary_history)
     print("history_summary response:", summary)
 
     print("\nTesting rag_final_use:")
-    user_query = '我今年65岁了，高血压也有一点，有什么主意事项吗'
-    rag_response,ref = rag_chat_final_use(user_query, [])
+    user_query = '我怀疑是高血压导致的头痛，肯定是高血压！！我怀疑是高血压导致的头痛，应该怎么办？'
+    rag_response, ref = rag_chat_final_use(user_query, test_summary_history)
     print("rag_final_use response:", rag_response)
+    print("ref_length:", len(ref))
     print("rag_final_use references:", ref)
 
     # 测试单代理
     print("\nTesting single_agent:")
-    user_query = "最近心脏不舒服，是不是有心脏病了？"
+    user_query = "我今天又带你不舒服，血压有点高"
     # user_query = "你好，最近感冒了，有什么要注意的，请按照markdown格式回答"
     # user_query = "您好，最近很久没有人来看我了"
-    history = []
-    single_agent_response = single_agent(user_query, history)
+    history = [{'role': 'user', 'content': user_query}]
+    # single_agent_response = single_agent(user_query, history)
     # print("single_agent response:", single_agent_response)
 
     # 测试多代理
     print("\nTesting multi_agent:")
     health_history = []
     therapy_history = []
-    multi_agent_response = multi_agent(
-        user_query, health_history, therapy_history)
+    # multi_agent_response = multi_agent(
+    #     user_query, health_history, therapy_history)
     # print("multi_agent response:", multi_agent_response)
 
     # # 测试情绪检测
@@ -613,11 +701,11 @@ if __name__ == "__main__":
     # # print("chatPipeline response:", chat_pipeline_response)
     # # print("chatPipeline references:", chat_pipeline_ref)
 
-    # # 测试 ragPipeline
-    # print("\nTesting ragPipeline:")
-    # rag_pipeline_response, rag_pipeline_ref = query_pipeline(user_query)
-    # # print("ragPipeline response:", rag_pipeline_response)
-    # # print("ragPipeline references:", rag_pipeline_ref)
+    # 测试 ragPipeline
+    print("\nTesting ragPipeline:")
+    rag_pipeline_response, rag_pipeline_ref = query_pipeline(user_query)
+    print("ragPipeline response:", rag_pipeline_response)
+    print("ragPipeline references:", rag_pipeline_ref)
 
     # # 获取聊天历史记录
     # print("\nGetting chat history:")
