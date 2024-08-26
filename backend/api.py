@@ -34,6 +34,7 @@ class EmotionModel(BaseModel):
 class HistoryModel(BaseModel):
     user_query: str
     history: list
+    mode: dict
 
 
 class MultiAgentModel(BaseModel):
@@ -125,7 +126,7 @@ def get_chat_history_endpoint():
 
 @app.post("/single_agent")
 def single_agent_endpoint(query: HistoryModel):
-    response = single_agent(query.user_query, query.history, False)
+    response = single_agent(query.user_query, query.history, query.mode, False)
     return {"response": response}
 
 
