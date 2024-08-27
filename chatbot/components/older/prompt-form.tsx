@@ -6,6 +6,8 @@ import { IconArrowElbow } from "@/components/ui/icon";
 import { SaveAction } from "@/lib/types";
 
 export default function PromptForm({saveAction, text}: {saveAction: SaveAction, text: string}) {
+   
+
     const [inputValue, setInputValue] = React.useState(text);
 
     React.useEffect(() => {

@@ -392,3 +392,143 @@ export async function fetchResetHistory(): Promise<void> {
         throw new Error('Failed to reset history.');
     }
 }
+
+
+// 生成 UUID
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0,
+            v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+// 获取或生成 CUID
+function getCUID() {
+    let cuid = localStorage.getItem('cuid');
+    if (!cuid) {
+        cuid = generateUUID();
+        localStorage.setItem('cuid', cuid);
+    }
+    return cuid;
+}
+
+// 短文本在线合成-基础音库，请求地址：http://vop.baidu.com/server_api
+// API ID：99081331
+// APIKEY：HI9V7RVRZDPnVq2kkkQFnpTq
+// Secret Key：B2Z0qhoMCcSPd8Y59f2JV79JGfFVdWxN
+
+// baidu asr fetch
+export async function fetchASRBaidu(audio: Blob): Promise<string> {
+    const cuid = getCUID();
+
+    // 将音频数据转换为 Base64
+    const audioBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64String = reader.result?.toString().split(',')[1];
+            if (base64String) {
+                // console.log('Base64 String:', base64String);
+                resolve(base64String);
+            } else {
+                reject('Failed to convert audio to Base64.');
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(audio);
+    });
+
+    // 将音频数据转换为 Base64
+
+
+    try {
+        const response = await fetch("http://vop.baidu.com/server_api", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                format: 'pcm',
+                rate: 16000,
+                channel: 1,
+                token: '25.613b05d3e97b773cf8c5c94312f9fabe.315360000.2038481187.282335-99081331',
+                cuid: '123456',
+                dev_pid: 1537,
+                speech: audioBase64, 
+                len: audio.size
+            }),
+            mode: 'no-cors'
+        });
+
+        console.log('baidu ASR response:', response);
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        console.log('data:', data);
+        const result = data.result ? data.result[0] : '';
+        return result;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        throw new Error('Failed to fetch ASR from Baidu.');
+    }
+}
+
+// export async function fetchASRBaiduByAPI(audio: Blob): Promise<any> {
+
+
+//     const audioBase64 = await new Promise<string>((resolve, reject) => {
+//         const reader = new FileReader();
+//         reader.onloadend = () => {
+//             const base64String = reader.result?.toString().split(',')[1];
+//             if (base64String) {
+//                 resolve(base64String);
+//             } else {
+//                 reject('Failed to convert audio to Base64.');
+//             }
+//         };
+//         reader.onerror = reject;
+//         reader.readAsDataURL(audio);
+//     });
+
+//     const response = await fetch('/api/asr', {
+//         method: 'POST',
+//         headers: {
+//             'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//             audioBase64: audioBase64,
+//             size: audio.size // 这里传递的是原始大小
+//         }),
+//     });
+
+//     if (!response.ok) {
+//         throw new Error('Network response was not ok');
+//     }
+
+//     const data = await response.json();
+//     return data; // 处理返回的数据
+// }
+// fetch 
+export async function fetchTTSXFei(text: string): Promise<any> {
+    const response = await fetch('/api/tts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+  
+    if (response.ok) {
+       
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        return url;
+    } else {
+      console.error('Error fetching audio:', response.statusText);
+    }
+  }
+  
