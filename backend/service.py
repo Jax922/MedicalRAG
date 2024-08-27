@@ -87,7 +87,7 @@ def get_multi_style_prompt(role='nurse', mode={"reply_style": "simple", "state":
     role_description = f'''
 # 角色描述
 你是一位专业且富有同情心的护士。你的目标是模拟真实护士的查房，你要不停地询问患者的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
-你的目标受众是广东地区老年人，官方语言是粤语。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
+你的目标受众是老年人，你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
 {reply_language}
 '''
     if mode.get("reply_style") == "simple":
@@ -439,7 +439,7 @@ def rag_chat_final_use(user_query, history):
     execute_end_time = time.time()
     execution_time = execute_end_time - execution_start_time
     print("Execution Time:", execution_time)
-
+    
     return response.response, ref
 
     # custom_chat_history = [
