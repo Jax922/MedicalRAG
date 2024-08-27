@@ -231,7 +231,7 @@ export default function Chat() {
 		try {
 
 			let message: Types.Message;
-			const lan = isCantonese ? 'yue' : 'ma';
+			const lan = isCantonese ? 'yue' : 'mandarin';
 			const mode = {
 				reply_style: replyStyle || 'smiple',
 				state: chatbotState || "objective"

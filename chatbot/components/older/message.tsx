@@ -87,7 +87,7 @@ React.useEffect(() => {
 			<IconBot className="text-gray-700" />
 		  </div>
 		  <div className="flex-1 space-x-2 p-4 bg-gray-100 rounded-lg shadow-md">
-			<ReactMarkdown className="text-[2.5rem] text-gray-800">
+			<ReactMarkdown className="text-[1.5rem] text-gray-800">
 			  {message.content}
 			</ReactMarkdown>
 		  </div>
@@ -143,7 +143,7 @@ function UserMessage({ message }: { message: Types.Message }) {
 				<IconUsers className=" text-blue-700" />
 			</div>
 			<div className="flex-1 space-x-2 p-4 bg-blue-100 rounded-lg shadow-md">
-				<p className="text-[2.5rem] text-gray-800">{message.content}</p>
+				<p className="text-[1.5rem] text-gray-800">{message.content}</p>
 			</div>
 		</div>
   );

@@ -218,7 +218,7 @@ export async function* fetchMessageStreamDify(messages: Message[]): AsyncIterabl
 // }
 export async function fetchMessageLocal(messages: Message[], language?: string, mode?: Object): Promise<Message> {
     try {
-        const response = await fetch("http://localhost:8000/single_agent", {
+        const response = await fetch("http://10.37.81.23:8000/single_agent", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -267,7 +267,7 @@ export async function fetchMessageLocal(messages: Message[], language?: string, 
 // fetch non-prompting local
 export async function fetchMessageLocalNonPrompting(messages: Message[], language?: string): Promise<Message> {
     try {
-        const response = await fetch("http://localhost:8000/chat_without_prompt", {
+        const response = await fetch("http://10.37.81.23:8000/chat_without_prompt", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -278,7 +278,7 @@ export async function fetchMessageLocalNonPrompting(messages: Message[], languag
                     role: msg.type === 'bot' ? 'assistant' : 'user',
                     content: msg.content
                 })),
-                language: language || 'ma',
+                language: language || 'mandarin',
                 mode: {}
             }),
         });
@@ -374,7 +374,7 @@ export async function fetchTTSBaidu(text: string): Promise<string> {
 
 export async function fetchRAGLocal(messages: Message[]): Promise<Message> {
     try {
-        const response = await fetch("http://localhost:8000/rag_chat_final_use", {
+        const response = await fetch("http://10.37.81.23:8000/rag_chat_final_use", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -416,7 +416,7 @@ export async function fetchRAGLocal(messages: Message[]): Promise<Message> {
 // reset the history of the chat
 export async function fetchResetHistory(): Promise<void> {
     try {
-        const response = await fetch("http://localhost:8000/reset", {
+        const response = await fetch("http://10.37.81.23:8000/reset", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
