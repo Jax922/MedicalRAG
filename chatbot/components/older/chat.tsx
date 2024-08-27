@@ -3,7 +3,7 @@ import { useSearchParams } from 'next/navigation';
 import OlderPromptForm from "@/components/older/prompt-form";
 import OldMessage from "@/components/older/message";
 import RagRef from "@/components/older/rag-ref";
-import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal, fetchRAGLocal, fetchResetHistory } from "@/lib/actions";
+import { saveMessage, fetchMessage, fetchMessageStream, fetchMessageStreamDify, fetchMessageLocal, fetchRAGLocal, fetchResetHistory, fetchMessageLocalNonPrompting } from "@/lib/actions";
 import useWebSocket from "@/lib/websocket"
 import SpeechToText from "@/components/older/speech";
 import * as Types from "@/lib/types";
@@ -17,6 +17,11 @@ export default function Chat() {
 	const searchParams = useSearchParams();
   	const doctor = searchParams.get('doctor'); 
 	const Cantonese = searchParams.get('cantonese');
+	const prompting = searchParams.get('prompting');
+	const replyStyle = searchParams.get('replyStyle');
+	const chatbotState = searchParams.get('state');
+
+
 	const defaultKeywordString = "高血压,高血压病,冠心病,心脏病,心力衰竭,心衰,心力不足,动脉粥样硬化,动脉硬化,血管硬化,糖尿病,血糖高,慢性阻塞性肺疾病,慢性支气管炎,肺气肿,哮喘,喘息病,肺炎,肺部感染,阿尔茨海默病,老年痴呆,痴呆症,前列腺增生,前列腺肥大,前列腺问题,尿失禁,尿漏,尿路感染,尿道炎"
 	const defaultKeywords = defaultKeywordString.split(',');
 	const [selectedOption, setSelectedOption] = React.useState("keyword");
@@ -25,6 +30,7 @@ export default function Chat() {
 
 	const isDoctor = doctor === 'true';
 	const isCantonese = Cantonese === 'true';
+	const isPrompting = prompting === 'true';
 
 	if (isDoctor) {
 		ws = useWebSocket((data) => {
@@ -223,8 +229,22 @@ export default function Chat() {
 		setLoading(true);
 	
 		try {
-			const message = await fetchMessageLocal(msgData);
-	
+
+			let message: Types.Message;
+			const lan = isCantonese ? 'yue' : 'ma';
+			const mode = {
+				reply_style: replyStyle || 'smiple',
+				state: chatbotState || "objective"
+			}
+
+			if (isPrompting) {
+				message = await fetchMessageLocal(msgData, lan, );
+			} else {
+				console.log("without prompting");
+				
+				message = await fetchMessageLocalNonPrompting(msgData, lan);
+			}
+
 			setMsgData(prev => {
 				const updatedMessages = [...prev];
 				updatedMessages.push(message);
@@ -300,7 +320,6 @@ export default function Chat() {
 	const renderOldMessage = React.useCallback((message: Types.Message) => (
 		<OldMessage key={message.id} message={message} references={message.references}/>
 	  ), [msgData]);
-	  
 
 
   return (
