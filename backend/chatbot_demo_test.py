@@ -1,9 +1,11 @@
 from service import (chat_pipeline, condense_question_pipeline,
                      context_chat_pipeline, react_chat_pipeline,
                      chat_stream_pipeline, rag_chat_final_use,
-                     rag_chat_final_use, reset_chat_engine, single_agent, multi_agent)
+                     rag_chat_final_use, reset_chat_engine, single_agent, multi_agent,
+                     get_multi_style_prompt)
 
-def start_conversation():
+
+def start_conversation(style):
     print("开始与AI护士进行对话。如果要结束对话，请输入'退出'。")
     history = []
 
@@ -18,9 +20,9 @@ def start_conversation():
 
         # 直接将用户输入加入到 history 中
         history.append({'role': 'user', 'content': user_query})
-
+        print(history)
         # 调用 single_agent 函数处理历史记录，并传递当前历史
-        response = single_agent(user_query, history)
+        response = single_agent(user_query, history, style)
 
         # 更新 history，保持对话的延续性（注意此时 single_agent 会自动添加 AI 回复）
         history = response['history']
@@ -34,8 +36,12 @@ def start_conversation():
         role = "你" if entry['role'] == 'user' else "AI护士"
         print(f"{role}: {entry['content']}")
 
+
 if __name__ == "__main__":
-    start_conversation()
+
+    style = {"reply_style": "simple", "state": "passive"}
+    print(get_multi_style_prompt("nurse", style))
+    start_conversation(style)
     # print("\nTesting single_agent:")
     # user_query = "我今天又带你不舒服，血压有点高"
     # history = []
