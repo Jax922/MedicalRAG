@@ -16,6 +16,7 @@ export default function Chat() {
 
 	const searchParams = useSearchParams();
   	const doctor = searchParams.get('doctor'); 
+	const Cantonese = searchParams.get('cantonese');
 	const defaultKeywordString = "高血压,高血压病,冠心病,心脏病,心力衰竭,心衰,心力不足,动脉粥样硬化,动脉硬化,血管硬化,糖尿病,血糖高,慢性阻塞性肺疾病,慢性支气管炎,肺气肿,哮喘,喘息病,肺炎,肺部感染,阿尔茨海默病,老年痴呆,痴呆症,前列腺增生,前列腺肥大,前列腺问题,尿失禁,尿漏,尿路感染,尿道炎"
 	const defaultKeywords = defaultKeywordString.split(',');
 	const [selectedOption, setSelectedOption] = React.useState("keyword");
@@ -23,6 +24,7 @@ export default function Chat() {
 	let ws:any = null;
 
 	const isDoctor = doctor === 'true';
+	const isCantonese = Cantonese === 'true';
 
 	if (isDoctor) {
 		ws = useWebSocket((data) => {
@@ -295,13 +297,16 @@ export default function Chat() {
 		}
 	}
 
+	const renderOldMessage = React.useCallback((message: Types.Message) => (
+		<OldMessage key={message.id} message={message} references={message.references}/>
+	  ), [msgData]);
+	  
+
 
   return (
     <div className="flex flex-col items-start justify-between h-full">
 			<div className="flex flex-col items-start gap-4 p-4 w-full">
-				{msgData.map((message) => (
-					<OldMessage key={message.id} message={message} references={message.references}/>
-				))}
+				{msgData.map(renderOldMessage)}
 			</div>
 			{	loading &&
 				<div className="loading-spinner">
