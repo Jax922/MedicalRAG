@@ -8,7 +8,8 @@ from service import (chat_pipeline, chat_stream_pipeline,
                      query_pipeline, rag_chat_final_use,
                      reset_chat_engine, get_chat_history,
                      single_agent, multi_agent,
-                     check_rag_usage, emotion_detection, keywords_highlight, history_summary)
+                     check_rag_usage, emotion_detection, keywords_highlight, history_summary,
+                     gpt4o_history_call)
 
 app = FastAPI()
 
@@ -34,6 +35,8 @@ class EmotionModel(BaseModel):
 class HistoryModel(BaseModel):
     user_query: str
     history: list
+    mode: Optional[dict] = None
+    language: str
 
 
 class MultiAgentModel(BaseModel):
@@ -79,7 +82,7 @@ async def chat_endpoint(query: HistoryModel):
 
 @app.post("/rag_chat_final_use")
 def rag_chat_final_use_endpoint(query: HistoryModel):
-    response, ref = rag_chat_final_use(query.user_query, query.history)
+    response, ref = rag_chat_final_use(query.user_query, query.history,query.language)
     return {
         "response": response,
         "references": ref
@@ -123,9 +126,21 @@ def get_chat_history_endpoint():
     return {"chat_history": get_chat_history()}
 
 
+@app.post("/chat_without_prompt")
+def chat_without_prompt_endpoint(query: HistoryModel):
+    if query.language != 'mandarin':
+        query.history.insert(
+            0, {'role': 'system', 'content': '请使用粤语回答问题，请使用粤语回答问题'})
+    response = gpt4o_history_call('gpt-4o-mini', query.history, False)
+    return {
+        "response": response
+    }
+
+
 @app.post("/single_agent")
 def single_agent_endpoint(query: HistoryModel):
-    response = single_agent(query.user_query, query.history, False)
+
+    response = single_agent(query.user_query, query.history, query.mode, False)
     return {"response": response}
 
 

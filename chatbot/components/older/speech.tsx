@@ -1,35 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef} from 'react';
+import { useSearchParams } from 'next/navigation';
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { CSSTransition } from 'react-transition-group';
+import { fetchASRBaidu } from '@/lib/actions';
 
 const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void }> = ({ setSpeechText }) => {
+
+  const searchParams = useSearchParams();
+  const Cantonese = searchParams.get('cantonese');
+  const isCantonese = Cantonese === 'true';
+
   const [transcript, setTranscript] = useState('');
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [listening, setListening] = useState(false);
   const [showHint, setShowHint] = useState(true);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
 
-  useEffect(() => {
-    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
-      alert('浏览器不支持语音识别');
-      return;
-    }
-
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognitionInstance = new SpeechRecognition();
-    recognitionInstance.lang = 'zh-CN';
-    recognitionInstance.continuous = true;
-    recognitionInstance.interimResults = false;
-
-    recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
-      setShowHint(false);
-      setTranscript(event.results[0][0].transcript);
-      setSpeechText(event.results[0][0].transcript);
-    };
-
-    setRecognition(recognitionInstance);
-  }, [setSpeechText]);
-
-  const toggleListening = () => {
+  // if (!isCantonese) {
+    useEffect(() => {
+      if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+        alert('浏览器不支持语音识别');
+        return;
+      }
+  
+      const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      if (!isCantonese) {
+        recognitionInstance.lang = 'zh-CN';
+      } else {
+        recognitionInstance.lang = 'zh-HK';
+      }
+      
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = false;
+  
+      recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
+        setShowHint(false);
+        setTranscript(event.results[0][0].transcript);
+        setSpeechText(event.results[0][0].transcript);
+      };
+  
+      setRecognition(recognitionInstance);
+    }, [setSpeechText]);
+  // }
+  function googleASR() {
     if (recognition) {
       if (listening) {
         recognition.stop();
@@ -39,6 +54,11 @@ const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void }> = ({ 
       }
       setListening(!listening);
     }
+  }
+
+
+  const toggleListening = () => {
+    googleASR();
   };
 
   return (
