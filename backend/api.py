@@ -1,4 +1,5 @@
 import uvicorn
+from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,10 +36,10 @@ class EmotionModel(BaseModel):
 class HistoryModel(BaseModel):
     user_query: str
     history: list
-    mode: Optional[dict] = None
+
     language: str
 
-
+    mode: Optional[dict] = None
 class MultiAgentModel(BaseModel):
     user_query: str
     health_history: list
@@ -200,4 +201,4 @@ def history_summary_endpoint(query: HistoryModel):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
