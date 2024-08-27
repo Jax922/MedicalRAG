@@ -131,7 +131,7 @@ def chat_without_prompt_endpoint(query: HistoryModel):
     if query.language != 'mandarin':
         query.history.insert(
             0, {'role': 'system', 'content': '请使用粤语回答问题，请使用粤语回答问题'})
-    response = gpt4o_history_call('gpt4o-mini', query.history, False)
+    response = gpt4o_history_call('gpt-4o-mini', query.history, False)
     return {
         "response": response
     }
