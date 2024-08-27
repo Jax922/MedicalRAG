@@ -35,7 +35,7 @@ class EmotionModel(BaseModel):
 class HistoryModel(BaseModel):
     user_query: str
     history: list
-    mode: dict
+    mode: Optional[dict] = None
     language: str
 
 
@@ -82,7 +82,7 @@ async def chat_endpoint(query: HistoryModel):
 
 @app.post("/rag_chat_final_use")
 def rag_chat_final_use_endpoint(query: HistoryModel):
-    response, ref = rag_chat_final_use(query.user_query, query.history)
+    response, ref = rag_chat_final_use(query.user_query, query.history,query.language)
     return {
         "response": response,
         "references": ref
