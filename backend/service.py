@@ -483,7 +483,7 @@ def nursing_agent(user_query: str, history: List[Dict[str, Any]], is_stream=Fals
     return nursing_system_prompt
 
 
-def single_agent(user_query: str, history: List[Dict[str, Any]], mode={"reply_style": "simple", "state": "objective"}, language = "ma",is_stream=False) -> Dict[str, Any]:
+def single_agent(user_query: str, history: List[Dict[str, Any]], mode={"reply_style": "simple", "state": "objective"}, language = "mandarin",is_stream=False) -> Dict[str, Any]:
     """Handles the single-agent conversation."""
     health_advisor_system = get_multi_style_prompt("nurse", mode,language)
     # insert system prompt into history
