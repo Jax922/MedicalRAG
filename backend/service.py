@@ -407,26 +407,28 @@ def query_pipeline(user_query: str):
 
 def rag_chat_final_use(user_query, history):
     # 根据用户的查询以及回复(基本的寒暄是不需要的)，判断是否需要RAG
-    global chat_engine
+    global chat_engine,query_engine
     execution_start_time = time.time()
     # system_prompt = get_system_prompt("nurse")
     # chat_engine.chat_history.append(ChatMessage(
     #     role=MessageRole.SYSTEM, content=system_prompt))
     if history[-1].get('role', '') == 'user':
         history.pop()
+    print(query_engine.get_prompts())
+    response = query_engine.query(user_query)
 
     # chat_engine = chat_engine.from_llm(system_prompt=system_prompt)
-    role_description = f'''
-请务必使用粤语,广东话进行回答！！！！ 请务必使用粤语,广东话进行回答！！！！
-'''
-    if len(chat_engine.chat_history) == 0 or chat_engine.chat_history[0] != 'system':
-        chat_engine.chat_history.append(ChatMessage(
-            role=MessageRole.SYSTEM, content=role_description))
-    for message in history:
-        chat_engine.chat_history.append(ChatMessage(
-            role=message['role'], content=message['content']))
-    print(chat_engine.chat_history)
-    response = chat_engine.chat(user_query)
+#     role_description = f'''
+# 请务必使用粤语,广东话进行回答！！！！ 请务必使用粤语,广东话进行回答！！！！
+# ''' 
+#     if len(chat_engine.chat_history) == 0 or chat_engine.chat_history[0] != 'system':
+#         chat_engine.chat_history.append(ChatMessage(
+#             role=MessageRole.SYSTEM, content=role_description))
+#     for message in history:
+#         chat_engine.chat_history.append(ChatMessage(
+#             role=message['role'], content=message['content']))
+#     print(chat_engine.chat_history)
+#     response = chat_engine.chat(user_query)
     # response = query_engine.query(user_query)
 
     ref = []
