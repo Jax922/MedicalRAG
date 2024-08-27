@@ -141,7 +141,7 @@ def chat_without_prompt_endpoint(query: HistoryModel):
 @app.post("/single_agent")
 def single_agent_endpoint(query: HistoryModel):
 
-    response = single_agent(query.user_query, query.history, query.mode, False)
+    response = single_agent(query.user_query, query.history, query.mode,query.language,False)
     return {"response": response}
 
 

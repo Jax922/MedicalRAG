@@ -89,7 +89,9 @@ def get_multi_style_prompt(role='nurse', mode={"reply_style": "simple", "state":
 你是一位专业且富有同情心的护士。你的目标是模拟真实护士的查房，你要不停地询问患者的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
 你的目标受众是老年人，你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
 {reply_language}
-'''
+''' 
+    if mode == {}:
+        mode = {"reply_style": "simple", "state": "objective"}
     if mode.get("reply_style") == "simple":
         reply_style = f'''
 # 回答风格
@@ -736,13 +738,13 @@ if __name__ == "__main__":
     # summary = history_summary(test_summary_history)
     # print("history_summary response:", summary)
 
-    print("\nTesting rag_final_use:")
-    user_query = '我最近血压一直很高，感觉头痛。请查查资料'
-    rag_response, ref = rag_chat_final_use(
-        user_query, test_summary_history, "yueyu")
-    print("rag_final_use response:", rag_response)
-    print("ref_length:", len(ref))
-    print("rag_final_use references:", ref)
+    # print("\nTesting rag_final_use:")
+    # user_query = '我最近血压一直很高，感觉头痛。请查查资料'
+    # rag_response, ref = rag_chat_final_use(
+    #     user_query, test_summary_history, "yueyu")
+    # print("rag_final_use response:", rag_response)
+    # print("ref_length:", len(ref))
+    # print("rag_final_use references:", ref)
 
     # 测试单代理
     print("\nTesting single_agent:")
@@ -750,8 +752,11 @@ if __name__ == "__main__":
     # user_query = "你好，最近感冒了，有什么要注意的，请按照markdown格式回答"
     # user_query = "您好，最近很久没有人来看我了"
     history = [{'role': 'user', 'content': user_query}]
-    # single_agent_response = single_agent(user_query, history)
-    # print("single_agent response:", single_agent_response)
+    single_agent_response = single_agent(user_query, 
+                                         history,
+                                         mode={"reply_style": "simple", "state": "objective"},
+                                         language="mandarin")
+    print("single_agent response:", single_agent_response)
 
     # 测试多代理
     print("\nTesting multi_agent:")
