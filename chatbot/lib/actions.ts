@@ -216,7 +216,7 @@ export async function* fetchMessageStreamDify(messages: Message[]): AsyncIterabl
 //     }
 //   ]
 // }
-export async function fetchMessageLocal(messages: Message[]): Promise<Message> {
+export async function fetchMessageLocal(messages: Message[], language?: string, mode?: Object): Promise<Message> {
     try {
         const response = await fetch("http://localhost:8000/single_agent", {
             method: "POST",
@@ -230,6 +230,8 @@ export async function fetchMessageLocal(messages: Message[]): Promise<Message> {
                     role: msg.type === 'bot' ? 'assistant' : 'user',
                     content: msg.content
                 })),
+                language: language || 'ma',
+                mode: mode || {}
             }),
         });
 
@@ -256,6 +258,47 @@ export async function fetchMessageLocal(messages: Message[]): Promise<Message> {
         //     content: data.response,
         // };
         // return botMessage;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        throw new Error('Failed to fetch message from RAG.');
+    }
+}
+
+// fetch non-prompting local
+export async function fetchMessageLocalNonPrompting(messages: Message[], language?: string): Promise<Message> {
+    try {
+        const response = await fetch("http://localhost:8000/chat_without_prompt", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                user_query: messages[messages.length - 1].content,
+                history: messages.map(msg => ({
+                    role: msg.type === 'bot' ? 'assistant' : 'user',
+                    content: msg.content
+                })),
+                language: language || 'ma',
+                mode: {}
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        const result = data.response;
+        if (result.final_response) {
+            const botMessage: Message = {
+                id: String(Date.now()),
+                type: 'bot',
+                content: result.final_response,
+            };
+            return botMessage;
+        } else { // error response
+            throw new Error(data.detail[0].msg);
+        }
     } catch (error) {
         console.error('Error fetching data:', error);
         throw new Error('Failed to fetch message from RAG.');
