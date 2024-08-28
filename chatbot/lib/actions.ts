@@ -289,11 +289,11 @@ export async function fetchMessageLocalNonPrompting(messages: Message[], languag
 
         const data = await response.json();
         const result = data.response;
-        if (result.final_response) {
+        if (result) {
             const botMessage: Message = {
                 id: String(Date.now()),
                 type: 'bot',
-                content: result.final_response,
+                content: result,
             };
             return botMessage;
         } else { // error response

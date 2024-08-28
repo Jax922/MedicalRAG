@@ -37,7 +37,7 @@
 
 import { io, Socket } from 'socket.io-client';
 
-const WS_URL = 'ws://localhost:8080';
+const WS_URL = 'ws://10.37.81.23:8080';
 const socket: Socket = io(WS_URL);
 
 socket.on('connect', () => {

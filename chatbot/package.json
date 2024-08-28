@@ -11,7 +11,7 @@
   "dependencies": {
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "crypto-js": "^3.1.9-1",
+    "crypto-js": "^3.3.0",
     "echarts": "^5.5.1",
     "echarts-for-react": "^3.0.2",
     "echarts-wordcloud": "^2.1.0",

@@ -1,4 +1,4 @@
 
 export default {
-    "web_title": "智能问诊机器人",
+    "web_title": "智能机器人",
 }
