@@ -33,9 +33,10 @@ const fetchTTS = React.useCallback(async () => {
     let url = '';
 
     if (isCantonese) {
-      url = await fetchTTSXFei(message.content);
+      url = await fetchTTSXFei(message.content, "xiaomei");
     } else {
-      url = await fetchTTSBaidu(message.content);
+      // url = await fetchTTSBaidu(message.content);
+	  url = await fetchTTSXFei(message.content, "xiaoyan");
     }
 
     const newAudio = new Audio(url);

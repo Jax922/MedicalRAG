@@ -555,13 +555,14 @@ export async function fetchASRBaidu(audio: Blob): Promise<string> {
 //     return data; // 处理返回的数据
 // }
 // fetch 
-export async function fetchTTSXFei(text: string): Promise<any> {
+export async function fetchTTSXFei(text: string, lan?: string): Promise<any> {
+    let lan_type = lan ?  lan : 'xiaoyan';
     const response = await fetch('/api/tts', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, lan_type }),
     });
   
     if (response.ok) {

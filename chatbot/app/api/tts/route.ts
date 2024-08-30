@@ -28,6 +28,11 @@ export async function POST(req: Request) {
   }
 
   const { text } = body;
+  let lan_type = 'xiaoyan';
+
+  if (body.lan_type) {
+    lan_type = body.lan_type;
+  }
 
   if (!text) {
     return new NextResponse(JSON.stringify({ message: 'Text is required' }), { status: 400 });
@@ -94,9 +99,10 @@ export async function POST(req: Request) {
           aue: "lame", // 请求 MP3 格式的音频
           sfl: 1, // 1 表示音频采样率为 16k 参考文档：https://www.xfyun.cn/doc/tts/online_tts/API.html#%E6%8E%A5%E5%8F%A3%E8%A6%81%E6%B1%82
           auf: "audio/L16;rate=8000",
-        //   vcn: "xiaoyan", // 普通话
-            vcn: "xiaomei", // 广东话
+        //   vcn: "xiaoyan", // 普通话 "xiaomei" // 广东话
+            vcn: lan_type, 
           tte: "UTF8",
+          volume: 70
         },
         data: {
           text: Buffer.from(text).toString('base64'),
