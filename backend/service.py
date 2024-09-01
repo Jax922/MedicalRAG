@@ -203,7 +203,7 @@ def get_system_prompt(role='nurse', mode="simple", variables=None):
 index = setup_and_load_index()
 retriever = VectorIndexRetriever(
     index=index,
-    similarity_top_k=10,
+    similarity_top_k=5,
     verbose=True,
 )
 
@@ -251,12 +251,12 @@ response_synthesizer = get_response_synthesizer(response_mode="tree_summarize",
 query_engine = RetrieverQueryEngine(
     retriever=retriever,
     response_synthesizer=response_synthesizer,
-    node_postprocessors=[
-        LLMRerank(
-            choice_batch_size=2,
-            top_n=3,
-        )
-    ],
+    # node_postprocessors=[
+    #     LLMRerank(
+    #         choice_batch_size=2,
+    #         top_n=3,
+    #     )
+    # ],
 
 )
 
@@ -738,13 +738,13 @@ if __name__ == "__main__":
     # summary = history_summary(test_summary_history)
     # print("history_summary response:", summary)
 
-    # print("\nTesting rag_final_use:")
-    # user_query = '我最近血压一直很高，感觉头痛。请查查资料'
-    # rag_response, ref = rag_chat_final_use(
-    #     user_query, test_summary_history, "yueyu")
-    # print("rag_final_use response:", rag_response)
-    # print("ref_length:", len(ref))
-    # print("rag_final_use references:", ref)
+    print("\nTesting rag_final_use:")
+    user_query = '我最近血压一直很高，感觉头痛。请查查资料'
+    rag_response, ref = rag_chat_final_use(
+        user_query, test_summary_history, "yueyu")
+    print("rag_final_use response:", rag_response)
+    print("ref_length:", len(ref))
+    print("rag_final_use references:", ref)
 
     # 测试单代理
     print("\nTesting single_agent:")
