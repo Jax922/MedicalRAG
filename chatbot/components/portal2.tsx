@@ -26,7 +26,7 @@ function Portal() {
 
   const handleOptionSelect = (option: string) => {
     setSelectedOption(option);
-    let url = `/older?prompting=true&state=${option}`;
+    let url = `/older?prompting=true&non_input=true&state=${option}`;
     if (selectedLanguage === 'yue') {
       url += '&cantonese=true';
     } else {
@@ -43,21 +43,22 @@ function Portal() {
   const chatbots = [
     {
       name: '机器人 1',
-      url: '/older?prompting=false',
+      url: '/older?prompting=false&non_input=true',
     },
     {
       name: '机器人 2',
-      url: '/older?prompting=true',
+      url: '/older?prompting=true&non_input=true',
     },
     {
       name: '机器人 3',
-      url: '/older?doctor=true',
+      url: '/older?doctor=true&non_input=true',
     }
   ];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-r from-blue-500 to-purple-600">
       <div className="mb-8">
+        <h2 className="text-2xl font-bold text-white">无输入框版本</h2>
         <span className="text-2xl font-bold text-white">请选择语言：</span>
         <select
           className="p-2 bg-white rounded-lg shadow-md text-2xl"

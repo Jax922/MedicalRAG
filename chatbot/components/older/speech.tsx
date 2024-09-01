@@ -3,8 +3,9 @@ import { useSearchParams } from 'next/navigation';
 import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { CSSTransition } from 'react-transition-group';
 import { fetchASRBaidu } from '@/lib/actions';
+import { SaveAction } from "@/lib/types";
 
-const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void }> = ({ setSpeechText }) => {
+const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void, saveAction: SaveAction, isInput?: boolean }> = ({ setSpeechText, saveAction, isInput=true }) => {
 
   const searchParams = useSearchParams();
   const Cantonese = searchParams.get('cantonese');
@@ -16,6 +17,7 @@ const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void }> = ({ 
   const [showHint, setShowHint] = useState(true);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
+
 
   // if (!isCantonese) {
     useEffect(() => {
@@ -39,6 +41,10 @@ const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void }> = ({ 
         setShowHint(false);
         setTranscript(event.results[0][0].transcript);
         setSpeechText(event.results[0][0].transcript);
+        
+        if (!isInput) {
+          autoSendMessage(event.results[0][0].transcript);
+        }
       };
   
       setRecognition(recognitionInstance);
@@ -60,6 +66,14 @@ const SpeechComponent: React.FC<{ setSpeechText: (text: string) => void }> = ({ 
   const toggleListening = () => {
     googleASR();
   };
+
+  const autoSendMessage = (message: string) => {
+    saveAction({
+      id: String(Date.now()),
+      type: 'user',
+      content: message
+    });
+  }
 
   return (
     <div className="flex flex-col items-center space-y-4">
