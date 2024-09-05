@@ -130,7 +130,7 @@ export default function Chat() {
 			console.log('keywords fetch');
 			if (keywords.some((keyword) => message.content.includes(keyword))) {
 				console.log('rag fetch');
-				fetchResetHistory();
+				// fetchResetHistory();
 				fetchRAG(newMsgData);
 			} else {
 				console.log('non-rag fetch');

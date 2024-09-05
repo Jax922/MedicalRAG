@@ -37,8 +37,7 @@ class HistoryModel(BaseModel):
     user_query: str
     history: list
 
-    language: str
-
+    language: Optional[str] = 'yueyu'
     mode: Optional[dict] = None
 class MultiAgentModel(BaseModel):
     user_query: str
