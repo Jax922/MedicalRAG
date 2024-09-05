@@ -337,7 +337,7 @@ export default function Chat() {
             		<div className="spinner"></div>
         		</div>
 			}
-			<div className="w-full p-4 sticky bottom-0 bg-white">
+			<div className="w-full p-4 sticky bottom-0">
 				<SpeechToText setSpeechText={onSpeechChange} saveAction={saveAction} isInput={isInput}/>
 				{
 					isInput && <OlderPromptForm saveAction={saveAction} text={speechText}/>

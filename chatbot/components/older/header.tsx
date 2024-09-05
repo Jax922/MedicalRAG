@@ -26,11 +26,11 @@ export default function OlderHeader() {
           <a href="#">
             <Image src="/logo.svg" alt="logo" width={60} height={60} />
           </a>
-          <h2 className="font-bold text-[1.5rem] ml-6">
+          <h2 className="font-bold text-[1.7rem] ml-6">
             {CONFIG.web_title}
           </h2>
         </div>
-        <Link href="/" className="mr-4 p-3 text-[1.5rem] bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700">
+        <Link href="/" className="mr-4 p-3 text-[1.7rem] bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-700">
           返回普通版
         </Link>
       </header>

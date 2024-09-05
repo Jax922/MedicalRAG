@@ -36,7 +36,7 @@ export default function PromptForm({saveAction, text}: {saveAction: SaveAction, 
             <Textarea
                 style={{
                 }}
-                className="!text-[1.5rem] min-h-[60px] w-full resize-none bg-transparent px-5 py-[2rem] focus-within:outline-none sm:text-sm border border-gray-300 rounded-lg px-right-12 pr-[7rem] !leading-tight"
+                className="!text-[1.7rem] min-h-[60px] w-full resize-none bg-transparent px-5 py-[2rem] focus-within:outline-none sm:text-sm border border-gray-300 rounded-lg px-right-12 pr-[7rem] !leading-tight bg-white"
                 placeholder="您有什么想跟我说"  
                 minRows={1}
                 maxRows={3}
@@ -61,7 +61,7 @@ export default function PromptForm({saveAction, text}: {saveAction: SaveAction, 
 
                     }
                 }
-                style={{ fontSize: '1.5rem' }}
+                style={{ fontSize: '1.7rem' }}
                 className={cn(
                     "absolute right-6 top-1/2 transform -translate-y-1/2 p-4 rounded-md",
                     inputValue ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'
