@@ -50,6 +50,8 @@ const fetchTTS = React.useCallback(async () => {
       setIsPlaying(false);
     };
     newAudio.onerror = (err) => {
+		alert('Error playing audio');
+		alert(err);
       console.error("Error playing audio:", err);
     };
 
