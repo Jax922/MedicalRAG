@@ -84,11 +84,11 @@ React.useEffect(() => {
 	return (
 	  <div>
 		<div className="flex items-start">
-		  <div className="flex-shrink-0 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+		  <div className="flex-shrink-0 bg-white rounded-full flex items-center justify-center mr-2">
 			<IconBot className="text-gray-700" />
 		  </div>
-		  <div className="flex-1 space-x-2 p-4 bg-gray-100 rounded-lg shadow-md">
-			<ReactMarkdown className="text-[1.5rem] text-gray-800">
+		  <div className="flex-1 space-x-2 p-4 bg-white rounded-lg shadow-md">
+			<ReactMarkdown className="text-[1.7rem] text-gray-800">
 			  {message.content}
 			</ReactMarkdown>
 		  </div>
@@ -140,11 +140,11 @@ React.useEffect(() => {
 function UserMessage({ message }: { message: Types.Message }) {
   return (
     	<div className="flex items-start">
-			<div className="flex-shrink-0  bg-blue-300 rounded-full flex items-center justify-center mr-2">
+			<div className="flex-shrink-0  bg_green_default rounded-full flex items-center justify-center mr-2">
 				<IconUsers className=" text-blue-700" />
 			</div>
-			<div className="flex-1 space-x-2 p-4 bg-blue-100 rounded-lg shadow-md">
-				<p className="text-[1.5rem] text-gray-800">{message.content}</p>
+			<div className="flex-1 space-x-2 p-4 bg_green_default rounded-lg shadow-md">
+				<p className="text-[1.7rem] text-gray-800">{message.content}</p>
 			</div>
 		</div>
   );
