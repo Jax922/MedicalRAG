@@ -26,6 +26,12 @@ export default function RagRef({ references }: { references: Reference }) {
         setIsExpanded(!isExpanded);
     };
 
+    const uniqueReferences = references.filter((reference, index, self) =>
+        index === self.findIndex((t) => (
+            t.title === reference.title
+        ))
+    );
+
     return (
         <div className={cn("p-4 rounded-md shadow-sm border border-gray-500")}>
             <div className={cn("flex justify-between items-center mb-2")}>
@@ -39,7 +45,7 @@ export default function RagRef({ references }: { references: Reference }) {
             </div>
             {isExpanded && (
                 <ul className={cn("list-disc pl-5 space-y-1")}>
-                    {references.map((reference, index) => (
+                    {uniqueReferences.map((reference, index) => (
                         // <li key={index} className={cn("text-sm text-gray-700")}>
                             <RefItem key={index} referenceItem={reference} index={index}/>
                         // </li>
