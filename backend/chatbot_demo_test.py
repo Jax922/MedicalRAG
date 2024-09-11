@@ -25,7 +25,7 @@ def get_multi_style_prompt(role='nurse', mode={"reply_style": "simple", "state":
 你是一位专业且富有同情心的护士。你的目标是模拟真实护士的查房，你要不停地询问患者的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
 你的目标受众是老年人，你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
 {reply_language}
-''' 
+'''
     if mode == {}:
         mode = {"reply_style": "simple", "state": "objective"}
     if mode.get("reply_style") == "simple":
@@ -62,6 +62,7 @@ def get_multi_style_prompt(role='nurse', mode={"reply_style": "simple", "state":
     system_prompt = role_description + reply_style + common_task
     return system_prompt
 
+
 def single_agent_v1_2(user_query: str, history: List[Dict[str, Any]], mode={"reply_style": "simple", "state": "objective"}, language="mandarin", is_stream=False) -> Dict[str, Any]:
     v1_2_system_prompt = f'''
 # 角色描述
@@ -73,6 +74,7 @@ def single_agent_v1_2(user_query: str, history: List[Dict[str, Any]], mode={"rep
 3. 根据老年人的具体反馈，提供切实可行的建议，并保持简洁，避免复杂术语。
 4. 在主动引导话题的同时，要善于倾听老年人的反馈和情感
 5. 通过观察和老年人的反馈，识别他们的兴趣点（如阅读、爱好、日常习惯等），并引导他们分享这些信息，建立更深层次的互动。
+6. 为了更好地表达关心与同理心，务必要关注老人的感受，适时地表达对他们情感的理解与共鸣，从而增强信任感和亲切感。同时，结合实际行动（如温柔地提醒喝水、细心提供药物、贴心建议休息等）可以进一步提升沟通效果，使关怀更加具体和有温度
 7. 尽量让老年人感受到被关注和支持，适时给予鼓励和安慰，帮助他们感到舒适和安全。
 '''
     if len(history) == 0 or history[0]['role'] != 'system':
