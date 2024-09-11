@@ -100,3 +100,15 @@
       transform: rotate(360deg);
   }
 }
+
+.bg_gray_default {
+  background-color: rgb(243, 243, 243) !important;
+}
+
+.bg_green_default {
+  background-color: rgb(149, 236, 105) !important;
+}
+
+.text_green_default {
+  color: rgb(149, 236, 105) !important;
+}
