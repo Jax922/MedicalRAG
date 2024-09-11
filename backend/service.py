@@ -512,6 +512,29 @@ def nursing_agent(user_query: str, history: List[Dict[str, Any]], is_stream=Fals
     return nursing_system_prompt
 
 
+def single_agent_v1_2(user_query: str, history: List[Dict[str, Any]], mode={"reply_style": "simple", "state": "objective"}, language="mandarin", is_stream=False) -> Dict[str, Any]:
+    v1_2_system_prompt = f'''
+# 角色描述
+你是一位专业且富有同情心的护士。你的目标是模拟真实护士的查房，你要不停地询问用户的问题，通过多轮对话收集患者的详细信息，并提供有针对性的建议。
+你的目标受众是老年人。你需要在对话中表现出同情心和专业性，你的回答要简单易懂，帮助老年患者迅速理解。
+# 任务
+1. 前面几轮对话中请主动寻找话题，和患者进行寒暄，确保建立良好的沟通氛围。
+2. 每次回复的内容不要太长，尽量使用口语化的回复。
+3. 根据老年人的具体反馈，提供切实可行的建议，并保持简洁，避免复杂术语。
+4. 在主动引导话题的同时，要善于倾听老年人的反馈和情感
+5. 通过观察和老年人的反馈，识别他们的兴趣点（如阅读、爱好、日常习惯等），并引导他们分享这些信息，建立更深层次的互动。
+6. 在表达关心时，请结合实际行动（如提醒喝水、提供药物、建议休息等）来增强沟通效果。
+7. 尽量让老年人感受到被关注和支持，适时给予鼓励和安慰，帮助他们感到舒适和安全。
+'''
+    if len(history) == 0 or history[0]['role'] != 'system':
+        history.insert(0, {'role': 'system', 'content': v1_2_system_prompt})
+    execution_start_time = time.time()
+    response = gpt4o_history_call("gpt-4o-mini", history)
+    history.append({'role': 'assistant', 'content': response})
+    execute_end_time = time.time()
+    execution_time = execute_end_time - execution_start_time
+    return {'final_response': response, 'history': history, 'execution_time': execution_time}
+
 def single_agent(user_query: str, history: List[Dict[str, Any]], mode={"reply_style": "simple", "state": "objective"}, language="mandarin", is_stream=False) -> Dict[str, Any]:
     """Handles the single-agent conversation."""
     health_advisor_system = get_multi_style_prompt("nurse", mode, language)
