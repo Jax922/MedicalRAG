@@ -112,3 +112,14 @@
 .text_green_default {
   color: rgb(149, 236, 105) !important;
 }
+
+html {
+  font-size: 16px; /* 基础字体大小 */
+}
+
+body {
+  font-family: 'Arial', 'PingFang SC', 'Microsoft Yahei', sans-serif;
+  font-size: 1rem; /* 相当于 16px */
+  line-height: 1.6;
+  color: #333;
+}
